@@ -1,0 +1,12 @@
+{
+  "plan_name": "Offseason Base Block",
+  "plan_start_date": "2026-03-17",
+  "athlete": {
+    "ftp": 190,
+    "weight": 72,
+    "lthr": 165,
+    "run_threshold_sec_per_km": 290,
+    "swim_css_sec_per_100m": 180
+  },
+  "weeks": []
+}
