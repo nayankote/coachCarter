@@ -14,7 +14,8 @@ async function run(workoutId) {
   const { data: workout } = await db.from('workouts').select('*').eq('id', workoutId).single();
   await db.from('workouts').update({ status: 'analyzing' }).eq('id', workoutId);
 
-  const { data: fitData } = await db.storage.from('fit-files').download(workout.fit_file_path);
+  const { data: fitBlob } = await db.storage.from('fit-files').download(workout.fit_file_path);
+  const fitData = Buffer.from(await fitBlob.arrayBuffer());
 
   // 2. Match to plan (done before extractMetrics so athlete profile is available)
   const plan = loadPlan();
