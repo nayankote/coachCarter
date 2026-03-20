@@ -8,5 +8,546 @@
     "run_threshold_sec_per_km": 290,
     "swim_css_sec_per_100m": 180
   },
-  "weeks": []
+  "weeks": [
+    {
+      "week": 1,
+      "label": "Base Build",
+      "sessions": [
+        {
+          "id": "mon_bike",
+          "day": "Monday",
+          "sport": "bike",
+          "type": "intervals",
+          "duration_min": 60,
+          "targets": {
+            "power_min": 171,
+            "power_max": 181,
+            "vi_max": 1.05,
+            "tss_target": 75,
+            "warmup": "10min easy spin 105-115W",
+            "main_set": "3×8min @171-181W, 3min recovery @100W",
+            "cooldown": "10min easy spin"
+          },
+          "coaching_notes": "First interval week — focus on holding power steady, not going out too hard. If you can't complete rep 3, reduce to 160W. NP should be ~170W."
+        },
+        {
+          "id": "tue_strength",
+          "day": "Tuesday",
+          "sport": "strength",
+          "type": "A",
+          "duration_min": 52,
+          "targets": {
+            "exercises": [
+              { "name": "KB Swing", "sets": 3, "reps": 12 },
+              { "name": "Single-leg RDL", "sets": 3, "reps": 8, "per_side": true },
+              { "name": "Goblet Squat", "sets": 3, "reps": 10 },
+              { "name": "Suitcase Carry", "sets": 3, "reps": "20m", "per_side": true },
+              { "name": "KB Row", "sets": 3, "reps": 10, "per_side": true }
+            ],
+            "mobility_min": 30,
+            "mobility_focus": "Hip Complex"
+          },
+          "coaching_notes": "Rest 60-90s between sets. Swing: drive hips, not a squat. Single-leg RDL: hinge until hamstring tension, control is everything. Goblet: heels down, chest up. Carry: ribs down, no lateral lean. Row: full scapular retraction at top."
+        },
+        {
+          "id": "wed_swim",
+          "day": "Wednesday",
+          "sport": "swim",
+          "type": "technique",
+          "duration_min": 55,
+          "targets": {
+            "total_distance_m": 2200,
+            "main_set": {
+              "css_target_sec_per_100m": 180,
+              "description": "4×200m @CSS pace (3:00/100m), 30s rest between"
+            }
+          },
+          "coaching_notes": "Technique week. CSS pace should feel controlled — if you're gasping, you're too fast. Drills: focus on high elbow recovery and full extension per stroke."
+        },
+        {
+          "id": "thu_strength",
+          "day": "Thursday",
+          "sport": "strength",
+          "type": "B",
+          "duration_min": 48,
+          "targets": {
+            "exercises": [
+              { "name": "Turkish Get-Up", "sets": 2, "reps": 3, "per_side": true },
+              { "name": "Bulgarian Split Squat", "sets": 3, "reps": 8, "per_side": true },
+              { "name": "KB Clean", "sets": 3, "reps": 5, "per_side": true },
+              { "name": "Dead Bug", "sets": 3, "reps": 8 },
+              { "name": "Renegade Row", "sets": 3, "reps": 5, "per_side": true }
+            ],
+            "mobility_min": 30,
+            "mobility_focus": "T-spine"
+          },
+          "coaching_notes": "TGU: slow and deliberate, 45-60s per rep. Split squat: front foot flat, torso upright. Clean: hip hike → elbow through → rack, not a bicep curl. Dead bug: low back flat to floor — non-negotiable. Renegade row: hips square, no rotation."
+        },
+        {
+          "id": "sat_bike",
+          "day": "Saturday",
+          "sport": "bike",
+          "type": "z2",
+          "duration_min": 75,
+          "targets": {
+            "power_min": 100,
+            "power_max": 125,
+            "hr_max": 145,
+            "warmup": null,
+            "main_set": "75min steady Z2, flat to moderate route",
+            "cooldown": null
+          },
+          "coaching_notes": "First brick of the block. Flat to moderate route, controlled HR. Focus on steady power, not speed."
+        },
+        {
+          "id": "sat_run",
+          "day": "Saturday",
+          "sport": "run",
+          "type": "easy",
+          "duration_min": 30,
+          "targets": {
+            "pace_min_sec": 345,
+            "pace_max_sec": 375,
+            "hr_max": 145,
+            "zone": "Z2"
+          },
+          "coaching_notes": "Run will feel heavy — that's normal. Don't chase pace, chase HR. If HR >150 at 5:45/km, slow down. Goal is adapting to the T2 transition."
+        },
+        {
+          "id": "sun_swim",
+          "day": "Sunday",
+          "sport": "swim",
+          "type": "easy",
+          "duration_min": 30,
+          "targets": {
+            "total_distance_m": null,
+            "main_set": {
+              "css_target_sec_per_100m": null,
+              "description": "30min easy — no watch pressure, focus on breathing and feel in water"
+            }
+          },
+          "coaching_notes": "No data pressure. Just swim by feel — breathing rhythm and relaxation."
+        },
+        {
+          "id": "sun_run",
+          "day": "Sunday",
+          "sport": "run",
+          "type": "easy",
+          "duration_min": 30,
+          "targets": {
+            "pace_min_sec": 345,
+            "pace_max_sec": 375,
+            "hr_max": 145,
+            "zone": "Z2"
+          },
+          "coaching_notes": "Easy effort. No data pressure. Run by feel after the swim."
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "label": "Progression",
+      "sessions": [
+        {
+          "id": "mon_bike",
+          "day": "Monday",
+          "sport": "bike",
+          "type": "intervals",
+          "duration_min": 62,
+          "targets": {
+            "power_min": 171,
+            "power_max": 181,
+            "vi_max": 1.05,
+            "tss_target": 80,
+            "warmup": "10min easy spin 105-115W",
+            "main_set": "4×7min @171-181W, 3min recovery @100W",
+            "cooldown": "10min easy spin"
+          },
+          "coaching_notes": "More reps, same intensity. 4th rep will be tough — that's the point. VI should stay ≤1.05. If HR climbs >170 on rep 4, cut it short."
+        },
+        {
+          "id": "tue_strength",
+          "day": "Tuesday",
+          "sport": "strength",
+          "type": "A",
+          "duration_min": 55,
+          "targets": {
+            "exercises": [
+              { "name": "KB Swing", "sets": 4, "reps": 12 },
+              { "name": "Single-leg RDL", "sets": 3, "reps": 10, "per_side": true },
+              { "name": "Goblet Squat", "sets": 3, "reps": 12 },
+              { "name": "Suitcase Carry", "sets": 3, "reps": "25m", "per_side": true },
+              { "name": "KB Row", "sets": 3, "reps": 12, "per_side": true }
+            ],
+            "mobility_min": 30,
+            "mobility_focus": "Hip Complex"
+          },
+          "coaching_notes": "Load increase week. Same exercises, more reps. Focus on quality over speed."
+        },
+        {
+          "id": "wed_swim",
+          "day": "Wednesday",
+          "sport": "swim",
+          "type": "intervals",
+          "duration_min": 55,
+          "targets": {
+            "total_distance_m": 2200,
+            "main_set": {
+              "css_target_sec_per_100m": 180,
+              "description": "8×100m @CSS (3:00/100m), 20s rest; then 4×50m sprint all-out, 45s rest"
+            }
+          },
+          "coaching_notes": "8×100m builds pace endurance. The 50m sprints are neuromuscular — go genuinely hard. Note split times on the 50s, you want sub-1:25/50m capability."
+        },
+        {
+          "id": "thu_strength",
+          "day": "Thursday",
+          "sport": "strength",
+          "type": "B",
+          "duration_min": 52,
+          "targets": {
+            "exercises": [
+              { "name": "Turkish Get-Up", "sets": 2, "reps": 3, "per_side": true },
+              { "name": "Bulgarian Split Squat", "sets": 3, "reps": 10, "per_side": true },
+              { "name": "KB Clean", "sets": 3, "reps": 6, "per_side": true },
+              { "name": "Dead Bug", "sets": 3, "reps": 10 },
+              { "name": "Renegade Row", "sets": 3, "reps": 6, "per_side": true }
+            ],
+            "mobility_min": 30,
+            "mobility_focus": "T-spine"
+          },
+          "coaching_notes": "Load increase. Same movement patterns, more reps. Keep form strict on TGU — slow is fast."
+        },
+        {
+          "id": "sat_bike",
+          "day": "Saturday",
+          "sport": "bike",
+          "type": "z2",
+          "duration_min": 90,
+          "targets": {
+            "power_min": 100,
+            "power_max": 125,
+            "hr_max": 145,
+            "warmup": null,
+            "main_set": "90min steady Z2, include 2-3 gentle rolling hills",
+            "cooldown": null
+          },
+          "coaching_notes": "Longer bike. Hills add variability without breaching Z2. Check: HR comes back down on descents — if not, you're going too hard on the climbs."
+        },
+        {
+          "id": "sat_run",
+          "day": "Saturday",
+          "sport": "run",
+          "type": "easy",
+          "duration_min": 40,
+          "targets": {
+            "pace_min_sec": 345,
+            "pace_max_sec": 375,
+            "hr_max": 145,
+            "zone": "Z2"
+          },
+          "coaching_notes": "Run off the bike should still feel Z2 by minute 10. Focus on running off tired legs."
+        },
+        {
+          "id": "sun_swim",
+          "day": "Sunday",
+          "sport": "swim",
+          "type": "easy",
+          "duration_min": 40,
+          "targets": {
+            "total_distance_m": null,
+            "main_set": {
+              "css_target_sec_per_100m": null,
+              "description": "40min easy — add 4×25m catch-up drill sets"
+            }
+          },
+          "coaching_notes": "Easy swim with some drill work. No time pressure."
+        },
+        {
+          "id": "sun_run",
+          "day": "Sunday",
+          "sport": "run",
+          "type": "easy",
+          "duration_min": 40,
+          "targets": {
+            "pace_min_sec": 345,
+            "pace_max_sec": 375,
+            "hr_max": 145,
+            "zone": "Z2"
+          },
+          "coaching_notes": "Negative split practice. First 20min almost too easy. Second 20min just slightly pick up — not race pace, just more awake."
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "label": "Peak Load",
+      "sessions": [
+        {
+          "id": "mon_bike",
+          "day": "Monday",
+          "sport": "bike",
+          "type": "intervals",
+          "duration_min": 63,
+          "targets": {
+            "power_min": 171,
+            "power_max": 181,
+            "vi_max": 1.05,
+            "tss_target": 85,
+            "warmup": "10min easy spin 105-115W",
+            "main_set": "3×10min @171-181W, 3min recovery @100W",
+            "cooldown": "10min easy spin"
+          },
+          "coaching_notes": "Longest sustained intervals. 10min at threshold separates fitness levels. Don't start rep 1 too hot. If HR doesn't drop below 145 before rep 3, extend recovery to 4min."
+        },
+        {
+          "id": "tue_strength",
+          "day": "Tuesday",
+          "sport": "strength",
+          "type": "A",
+          "duration_min": 60,
+          "targets": {
+            "exercises": [
+              { "name": "KB Swing", "sets": 4, "reps": 15 },
+              { "name": "Single-leg RDL", "sets": 4, "reps": 8, "per_side": true },
+              { "name": "Goblet Squat", "sets": 4, "reps": 10 },
+              { "name": "Suitcase Carry", "sets": 4, "reps": "25m", "per_side": true },
+              { "name": "KB Row", "sets": 4, "reps": 10, "per_side": true }
+            ],
+            "mobility_min": 30,
+            "mobility_focus": "Hip Complex"
+          },
+          "coaching_notes": "Peak volume. 4 sets across the board. Maintain form — if it breaks, reduce reps not weight."
+        },
+        {
+          "id": "wed_swim",
+          "day": "Wednesday",
+          "sport": "swim",
+          "type": "threshold",
+          "duration_min": 55,
+          "targets": {
+            "total_distance_m": 2200,
+            "main_set": {
+              "css_target_sec_per_100m": 180,
+              "description": "3×400m @CSS pace (3:00/100m), 45s rest; then 4×50m sub-CSS sprint, 30s rest"
+            }
+          },
+          "coaching_notes": "Longest continuous swim blocks. 400m at CSS is race-specific training for the 1.9km OW swim. 45s rest is tight — good. Sub-CSS 50s at the end teach your body to swim fast when tired."
+        },
+        {
+          "id": "thu_strength",
+          "day": "Thursday",
+          "sport": "strength",
+          "type": "B",
+          "duration_min": 58,
+          "targets": {
+            "exercises": [
+              { "name": "Turkish Get-Up", "sets": 3, "reps": 3, "per_side": true },
+              { "name": "Bulgarian Split Squat", "sets": 4, "reps": 8, "per_side": true },
+              { "name": "KB Clean", "sets": 4, "reps": 5, "per_side": true },
+              { "name": "Dead Bug", "sets": 4, "reps": 8 },
+              { "name": "Renegade Row", "sets": 4, "reps": 5, "per_side": true }
+            ],
+            "mobility_min": 30,
+            "mobility_focus": "T-spine"
+          },
+          "coaching_notes": "Peak stability volume. TGU goes to 3 sets — still slow and deliberate. Everything 4 sets now. Don't rush."
+        },
+        {
+          "id": "sat_bike",
+          "day": "Saturday",
+          "sport": "bike",
+          "type": "z2",
+          "duration_min": 90,
+          "targets": {
+            "power_min": 100,
+            "power_max": 125,
+            "hr_max": 145,
+            "warmup": null,
+            "main_set": "90min Z2, last 15min: 2×3min @145-155W (tempo), 2min easy between",
+            "cooldown": null
+          },
+          "coaching_notes": "Only peak week has tempo work — at the END of the bike to simulate late-race fatigue. Those 3min tempo blocks elevate HR before you run. Expect run to feel harder."
+        },
+        {
+          "id": "sat_run",
+          "day": "Saturday",
+          "sport": "run",
+          "type": "easy",
+          "duration_min": 45,
+          "targets": {
+            "pace_min_sec": 345,
+            "pace_max_sec": 375,
+            "hr_max": 145,
+            "zone": "Z2"
+          },
+          "coaching_notes": "Longest run week. Strict Z2 — fatigue from the bike tempo will test your discipline."
+        },
+        {
+          "id": "sun_swim",
+          "day": "Sunday",
+          "sport": "swim",
+          "type": "easy",
+          "duration_min": 45,
+          "targets": {
+            "total_distance_m": null,
+            "main_set": {
+              "css_target_sec_per_100m": null,
+              "description": "45min easy — add 2×100m time trial (note pace)"
+            }
+          },
+          "coaching_notes": "Time trial 100s are informational only — note the pace, don't force it."
+        },
+        {
+          "id": "sun_run",
+          "day": "Sunday",
+          "sport": "run",
+          "type": "easy",
+          "duration_min": 45,
+          "targets": {
+            "pace_min_sec": 345,
+            "pace_max_sec": 375,
+            "hr_max": 145,
+            "zone": "Z2"
+          },
+          "coaching_notes": "Biggest aerobic day — stay disciplined Z2. If HR climbs above 150, walk 1min. This builds base, not fitness through suffering."
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "label": "Deload",
+      "sessions": [
+        {
+          "id": "mon_bike",
+          "day": "Monday",
+          "sport": "bike",
+          "type": "z2",
+          "duration_min": 50,
+          "targets": {
+            "power_min": 161,
+            "power_max": 166,
+            "vi_max": 1.05,
+            "tss_target": 50,
+            "warmup": "10min easy spin",
+            "main_set": "2×8min @161-166W (85% FTP), 4min recovery",
+            "cooldown": "10min easy spin"
+          },
+          "coaching_notes": "Intensity maintained but volume drops ~30%. Should feel easy. If it doesn't, you're carrying fatigue — good sign you needed this deload."
+        },
+        {
+          "id": "tue_strength",
+          "day": "Tuesday",
+          "sport": "strength",
+          "type": "A",
+          "duration_min": 45,
+          "targets": {
+            "exercises": [
+              { "name": "KB Swing", "sets": 3, "reps": 10 },
+              { "name": "Single-leg RDL", "sets": 2, "reps": 8, "per_side": true },
+              { "name": "Goblet Squat", "sets": 2, "reps": 10 },
+              { "name": "Suitcase Carry", "sets": 2, "reps": "20m", "per_side": true },
+              { "name": "KB Row", "sets": 2, "reps": 10, "per_side": true }
+            ],
+            "mobility_min": 20,
+            "mobility_focus": "Hip Complex"
+          },
+          "coaching_notes": "Volume drops ~35% but move well. Deload is not a holiday — it's active recovery with controlled movement."
+        },
+        {
+          "id": "wed_swim",
+          "day": "Wednesday",
+          "sport": "swim",
+          "type": "easy",
+          "duration_min": 40,
+          "targets": {
+            "total_distance_m": 1600,
+            "main_set": {
+              "css_target_sec_per_100m": null,
+              "description": "1,000m continuous @comfortable effort (~3:15-3:20/100m) — no intervals"
+            }
+          },
+          "coaching_notes": "Deload. No watch pressure. Focus on feel, breathing rhythm, and stroke efficiency. Active recovery for your shoulders."
+        },
+        {
+          "id": "thu_strength",
+          "day": "Thursday",
+          "sport": "strength",
+          "type": "B",
+          "duration_min": 42,
+          "targets": {
+            "exercises": [
+              { "name": "Turkish Get-Up", "sets": 2, "reps": 2, "per_side": true },
+              { "name": "Bulgarian Split Squat", "sets": 2, "reps": 8, "per_side": true },
+              { "name": "KB Clean", "sets": 2, "reps": 5, "per_side": true },
+              { "name": "Dead Bug", "sets": 2, "reps": 8 },
+              { "name": "Renegade Row", "sets": 2, "reps": 5, "per_side": true }
+            ],
+            "mobility_min": 20,
+            "mobility_focus": "T-spine"
+          },
+          "coaching_notes": "Deload. Move well, not hard. Mobility shortened to 20min but don't skip it."
+        },
+        {
+          "id": "sat_bike",
+          "day": "Saturday",
+          "sport": "bike",
+          "type": "z2",
+          "duration_min": 60,
+          "targets": {
+            "power_min": 100,
+            "power_max": 115,
+            "hr_max": 145,
+            "warmup": null,
+            "main_set": "60min very controlled Z2, flat route",
+            "cooldown": null
+          },
+          "coaching_notes": "Shortest brick. Should feel easy. If it doesn't, body is telling you something — evaluate accumulated fatigue."
+        },
+        {
+          "id": "sat_run",
+          "day": "Saturday",
+          "sport": "run",
+          "type": "easy",
+          "duration_min": 20,
+          "targets": {
+            "pace_min_sec": 360,
+            "pace_max_sec": 390,
+            "hr_max": 150,
+            "zone": "Z2"
+          },
+          "coaching_notes": "Feel fresh, not fatigued. Short and easy."
+        },
+        {
+          "id": "sun_swim",
+          "day": "Sunday",
+          "sport": "swim",
+          "type": "easy",
+          "duration_min": 30,
+          "targets": {
+            "total_distance_m": null,
+            "main_set": {
+              "css_target_sec_per_100m": null,
+              "description": "30min easy — feel-good only, no structure"
+            }
+          },
+          "coaching_notes": "Feel-good swim. Assess how body feels. Note any lingering fatigue."
+        },
+        {
+          "id": "sun_run",
+          "day": "Sunday",
+          "sport": "run",
+          "type": "easy",
+          "duration_min": 30,
+          "targets": {
+            "pace_min_sec": 360,
+            "pace_max_sec": 390,
+            "hr_max": 150,
+            "zone": "Z2"
+          },
+          "coaching_notes": "By week 4 your legs should feel noticeably fresher than week 3. That's the adaptation signal you want."
+        }
+      ]
+    }
+  ]
 }
