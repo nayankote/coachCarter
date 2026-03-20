@@ -25,7 +25,7 @@ const mockDb = {
   eq: jest.fn().mockReturnThis(),
   single: jest.fn().mockResolvedValue({ data: mockWorkout }),
   update: jest.fn().mockReturnThis(),
-  storage: { from: jest.fn().mockReturnThis(), download: jest.fn().mockResolvedValue({ data: Buffer.from('fit') }) },
+  storage: { from: jest.fn().mockReturnThis(), download: jest.fn().mockResolvedValue({ data: { arrayBuffer: async () => Buffer.from('fit') } }) },
 };
 
 beforeEach(() => {

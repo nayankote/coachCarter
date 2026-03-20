@@ -7,19 +7,22 @@ const mockRecords = Array.from({ length: 120 }, (_, i) => ({
 }));
 
 const mockFitData = {
-  activity: {
-    sessions: [{
-      total_elapsed_time: 3600,
-      total_calories: 450,
-      start_time: new Date('2026-03-18T06:00:00Z'),
-      timestamp: new Date('2026-03-18T07:00:00Z'),
-      avg_heart_rate: 145,
-      max_heart_rate: 165,
-      avg_power: 185,
-      total_distance: 30000,
-      laps: [{ records: mockRecords }],
-    }],
-  },
+  // fit-file-parser places sessions at top-level data.sessions[], not under data.activity
+  sessions: [{
+    total_elapsed_time: 3600,
+    total_calories: 450,
+    start_time: new Date('2026-03-18T06:00:00Z'),
+    timestamp: new Date('2026-03-18T07:00:00Z'),
+    avg_heart_rate: 145,
+    max_heart_rate: 165,
+    avg_power: 185,
+    total_distance: 30,   // km (parser uses lengthUnit: 'km')
+    enhanced_avg_speed: 2.0,  // km/h — used for swim avg pace
+  }],
+  // records are at top-level data.records[], not nested inside laps
+  records: mockRecords,
+  lengths: [],
+  activity: {},
 };
 
 jest.mock('fit-file-parser', () => ({
