@@ -196,12 +196,12 @@
       color: #aaa; font-weight: 600; margin-bottom: 10px;
     }
 
-    /* Key stats row — 3-4 numbers, not a grid of boxes */
-    .stats-row { display: flex; gap: 0; border: 1px solid #e8e6e0; border-radius: 10px; overflow: hidden; }
-    .stat-cell { flex: 1; padding: 12px 14px; border-right: 1px solid #e8e6e0; }
+    /* Key stats row — flexible, wraps to second row if many cells */
+    .stats-row { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid #e8e6e0; border-radius: 10px; overflow: hidden; }
+    .stat-cell { flex: 1 1 auto; min-width: 90px; padding: 12px 14px; border-right: 1px solid #e8e6e0; border-bottom: 1px solid #e8e6e0; }
     .stat-cell:last-child { border-right: none; }
-    .stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-value { font-size: 22px; font-weight: 800; color: #1a1a1a; line-height: 1.1; margin-top: 2px; }
+    .stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .stat-value { font-size: 20px; font-weight: 800; color: #1a1a1a; line-height: 1.1; margin-top: 2px; white-space: nowrap; }
     .stat-unit  { font-size: 11px; color: #888; font-weight: 400; }
 
     /* Planned vs actual comparison */
@@ -687,16 +687,23 @@ function buildStats(workout, session) {
     if (w.intensity_factor != null) m.push(['IF', w.intensity_factor, '']);
   } else if (w.sport === 'run') {
     if (w.avg_pace_sec != null) m.push(['Pace', formatPace(w.avg_pace_sec), '/km']);
-    if (w.avg_hr != null)       m.push(['Avg HR', w.avg_hr, 'bpm']);
     if (w.tss != null)          m.push(['TSS', Math.round(w.tss), '']);
   } else if (w.sport === 'swim') {
     if (w.distance_km != null)  m.push(['Distance', (w.distance_km * 1000).toFixed(0), 'm']);
     if (w.avg_pace_sec != null) m.push(['Pace', fmtPace100m(w.avg_pace_sec), '']);
     if (w.tss != null)          m.push(['sTSS', Math.round(w.tss), '']);
-    if (w.avg_hr != null)       m.push(['Avg HR', w.avg_hr, 'bpm']);
-  } else if (w.sport === 'strength') {
-    if (w.calories != null) m.push(['Calories', w.calories, 'kcal']);
   }
+
+  // HR — all endurance sports
+  if (w.sport !== 'strength') {
+    const hrParts = [];
+    if (w.avg_hr != null) hrParts.push(`avg ${w.avg_hr}`);
+    if (w.max_hr != null) hrParts.push(`max ${w.max_hr}`);
+    if (hrParts.length) m.push(['HR', hrParts.join(' / '), 'bpm']);
+  }
+
+  // Calories — all sports
+  if (w.calories != null) m.push(['Calories', w.calories, 'kcal']);
 
   return m;
 }
