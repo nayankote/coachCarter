@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoachCarter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f0f1a;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: #1a1a2e;
+      border-bottom: 1px solid #2d2d4e;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; letter-spacing: -0.3px; }
+    .header-week { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+    .header-nav { display: flex; gap: 8px; align-items: center; }
+    .nav-btn {
+      background: #2d2d4e; border: none; color: #e2e8f0;
+      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+      transition: background 0.15s;
+    }
+    .nav-btn:hover { background: #3d3d5e; }
+    .nav-btn.today { color: #a78bfa; border: 1px solid #a78bfa; background: transparent; }
+    .nav-btn.today:hover { background: #a78bfa22; }
+
+    /* ── Weekly summary strip ── */
+    .week-summary {
+      display: flex;
+      gap: 12px;
+      padding: 10px 20px;
+      background: #1a1a2e;
+      border-bottom: 1px solid #2d2d4e;
+      overflow-x: auto;
+    }
+    .summary-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: #252540; border-radius: 20px;
+      padding: 4px 12px; white-space: nowrap; font-size: 12px;
+    }
+    .summary-pill .icon { font-size: 14px; }
+    .summary-pill .label { color: #94a3b8; }
+    .summary-pill .value { font-weight: 600; color: #e2e8f0; }
+    .summary-pill .planned { color: #64748b; margin-left: 2px; }
+
+    /* ── Calendar grid ── */
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: #2d2d4e;
+      margin: 0;
+      min-height: calc(100vh - 120px);
+    }
+
+    .day-col {
+      background: #0f0f1a;
+      display: flex;
+      flex-direction: column;
+    }
+    .day-col.today { background: #13132a; }
+    .day-col.today .day-header { border-bottom-color: #a78bfa; }
+
+    .day-header {
+      padding: 10px 8px 8px;
+      border-bottom: 2px solid #2d2d4e;
+      text-align: center;
+    }
+    .day-name { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; }
+    .day-date { font-size: 20px; font-weight: 700; color: #e2e8f0; line-height: 1.2; }
+    .day-date.today-date {
+      background: #a78bfa;
+      color: #0f0f1a;
+      border-radius: 50%;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 2px auto 0;
+    }
+
+    .day-sessions { padding: 8px 6px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+    /* ── Workout cards ── */
+    .workout-card {
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+      position: relative;
+      overflow: hidden;
+    }
+    .workout-card:hover { transform: translateY(-1px); opacity: 0.92; }
+    .workout-card:active { transform: translateY(0); }
+
+    .card-planned      { background: transparent; border: 1.5px dashed #3d3d5e; color: #94a3b8; }
+    .card-complete-good { background: #14532d; border: 1px solid #22c55e; color: #bbf7d0; }
+    .card-complete-ok   { background: #451a03; border: 1px solid #f59e0b; color: #fde68a; }
+    .card-complete-poor { background: #450a0a; border: 1px solid #ef4444; color: #fecaca; }
+    .card-awaiting      { background: #431407; border: 1px solid #f97316; color: #fed7aa; }
+    .card-unplanned     { background: #1e293b; border: 1px solid #475569; color: #94a3b8; }
+
+    @keyframes pulse-border {
+      0%, 100% { border-color: #f97316; }
+      50% { border-color: #fb923c88; }
+    }
+    .card-awaiting { animation: pulse-border 2s infinite; }
+
+    .card-sport { font-size: 16px; line-height: 1; }
+    .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .card-stat  { font-size: 12px; margin-top: 3px; }
+    .card-score {
+      position: absolute; top: 6px; right: 8px;
+      font-size: 11px; font-weight: 700; opacity: 0.9;
+    }
+
+    /* ── Detail panel ── */
+    .panel-overlay {
+      position: fixed; inset: 0;
+      background: #00000066;
+      z-index: 20;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .panel-overlay.open { opacity: 1; pointer-events: all; }
+
+    .detail-panel {
+      position: fixed; top: 0; right: -400px; bottom: 0;
+      width: 380px; max-width: 100vw;
+      background: #1a1a2e;
+      border-left: 1px solid #2d2d4e;
+      z-index: 21;
+      overflow-y: auto;
+      transition: right 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .detail-panel.open { right: 0; }
+
+    .panel-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid #2d2d4e;
+      position: sticky; top: 0; background: #1a1a2e; z-index: 1;
+    }
+    .panel-sport-icon { font-size: 28px; margin-right: 12px; }
+    .panel-title-block { flex: 1; }
+    .panel-title { font-size: 16px; font-weight: 700; color: #e2e8f0; }
+    .panel-subtitle { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .panel-close {
+      background: none; border: none; color: #64748b; font-size: 20px;
+      cursor: pointer; padding: 0 0 0 12px; line-height: 1;
+    }
+    .panel-close:hover { color: #e2e8f0; }
+
+    .panel-body { padding: 16px 20px; }
+    .panel-section { margin-bottom: 20px; }
+    .panel-section-title {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      color: #64748b; font-weight: 600; margin-bottom: 10px;
+    }
+
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .metric-box { background: #252540; border-radius: 8px; padding: 10px 12px; }
+    .metric-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-value { font-size: 18px; font-weight: 700; color: #e2e8f0; margin-top: 2px; }
+    .metric-unit { font-size: 11px; color: #94a3b8; font-weight: 400; }
+
+    .compliance-bar-wrap { background: #252540; border-radius: 8px; padding: 12px; }
+    .compliance-score-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .compliance-score-num { font-size: 28px; font-weight: 800; }
+    .compliance-score-num.good { color: #22c55e; }
+    .compliance-score-num.ok   { color: #f59e0b; }
+    .compliance-score-num.poor { color: #ef4444; }
+    .compliance-label { font-size: 11px; color: #64748b; }
+    .compliance-bar-bg { background: #1a1a2e; border-radius: 4px; height: 6px; overflow: hidden; }
+    .compliance-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+    .compliance-bar-fill.good { background: #22c55e; }
+    .compliance-bar-fill.ok   { background: #f59e0b; }
+    .compliance-bar-fill.poor { background: #ef4444; }
+
+    .coaching-report {
+      background: #252540; border-radius: 8px; padding: 14px;
+      line-height: 1.6; color: #cbd5e1; font-size: 13px;
+      white-space: pre-wrap;
+    }
+    .coaching-report-empty { color: #475569; font-style: italic; font-size: 13px; }
+
+    .feedback-box {
+      background: #252540; border-radius: 8px; padding: 14px;
+      font-size: 13px; color: #94a3b8; line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .badge-complete  { background: #14532d; color: #22c55e; }
+    .badge-awaiting  { background: #431407; color: #f97316; }
+    .badge-unplanned { background: #1e293b; color: #94a3b8; }
+
+    @media (max-width: 700px) {
+      .calendar { grid-template-columns: 1fr; }
+      .day-col:not(.today) { display: none; }
+      .detail-panel { width: 100vw; }
+      .week-summary { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-title">CoachCarter</div>
+    <div class="header-week" id="weekLabel">—</div>
+    <div class="header-nav">
+      <button class="nav-btn" id="prevWeek">&#8592;</button>
+      <button class="nav-btn today" id="todayBtn">Today</button>
+      <button class="nav-btn" id="nextWeek">&#8594;</button>
+    </div>
+  </header>
+
+  <div class="week-summary" id="weekSummary"></div>
+  <div class="calendar" id="calendar"></div>
+
+  <div class="panel-overlay" id="overlay"></div>
+  <aside class="detail-panel" id="detailPanel">
+    <div class="panel-header">
+      <div style="display:flex;align-items:center">
+        <span class="panel-sport-icon" id="panelIcon"></span>
+        <div class="panel-title-block">
+          <div class="panel-title" id="panelTitle"></div>
+          <div class="panel-subtitle" id="panelSubtitle"></div>
+        </div>
+      </div>
+      <button class="panel-close" id="panelClose">&#x2715;</button>
+    </div>
+    <div class="panel-body" id="panelBody"></div>
+  </aside>
+
+  <script>
+const SPORT_ICON = { bike: '🚴', run: '🏃', swim: '🏊', strength: '💪' };
+const DAY_OFFSET = { monday:0, tuesday:1, wednesday:2, thursday:3, friday:4, saturday:5, sunday:6 };
+const DAY_NAMES  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+let plan = null;
+let workouts = [];
+let currentMonday = getMonday(new Date());
+
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  const diff = (day === 0) ? -6 : 1 - day;
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0, 0, 0, 0);
+  return dt;
+}
+
+function addDays(d, n) {
+  const dt = new Date(d);
+  dt.setDate(dt.getDate() + n);
+  return dt;
+}
+
+function toYMD(d) {
+  // Use local date parts — toISOString() returns UTC, wrong for positive-offset timezones (e.g. IST +5:30)
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function formatWeekLabel(monday) {
+  const sunday = addDays(monday, 6);
+  const opts = { month: 'short', day: 'numeric' };
+  return `${monday.toLocaleDateString('en-US', opts)} – ${sunday.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
+}
+
+function buildPlanMap(plan) {
+  const map = {};
+  const start = new Date(plan.plan_start_date + 'T00:00:00');
+  for (const week of plan.weeks) {
+    const weekStart = addDays(start, (week.week - 1) * 7);
+    for (const session of week.sessions) {
+      const offset = DAY_OFFSET[session.day.toLowerCase()] ?? 0;
+      const date = toYMD(addDays(weekStart, offset));
+      if (!map[date]) map[date] = [];
+      map[date].push({ ...session, _week: week.week, _weekLabel: week.label });
+    }
+  }
+  return map;
+}
+
+function buildWorkoutMap(workouts) {
+  const map = {};
+  for (const w of workouts) {
+    if (!map[w.date]) map[w.date] = [];
+    map[w.date].push(w);
+  }
+  return map;
+}
+
+function cardClass(workout) {
+  if (!workout) return 'card-planned';
+  if (workout.status === 'awaiting_feedback' || workout.status === 'processing') return 'card-awaiting';
+  if (workout.status === 'complete') {
+    const s = workout.compliance_score;
+    if (s == null) return 'card-complete-good';
+    if (s >= 80) return 'card-complete-good';
+    if (s >= 60) return 'card-complete-ok';
+    return 'card-complete-poor';
+  }
+  return 'card-unplanned';
+}
+
+function formatPace(sec) {
+  const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}/km`;
+}
+
+function cardStat(workout, session) {
+  if (!workout) {
+    if (session.sport === 'bike') return `${session.duration_min}min · ${session.targets?.tss_target ?? '—'}TSS`;
+    if (session.sport === 'run')  return `${session.duration_min}min`;
+    if (session.sport === 'swim') return `${session.targets?.total_distance_m ?? '—'}m`;
+    if (session.sport === 'strength') return `${session.duration_min}min · ${session.type}`;
+    return `${session.duration_min}min`;
+  }
+  const w = workout;
+  if (w.sport === 'bike') {
+    let s = `${w.duration_min?.toFixed(0) ?? '—'}min`;
+    if (w.normalized_power) s += ` · ${w.normalized_power}W`;
+    if (w.tss) s += ` · ${Math.round(w.tss)}TSS`;
+    return s;
+  }
+  if (w.sport === 'run') {
+    let s = `${w.duration_min?.toFixed(0) ?? '—'}min`;
+    if (w.avg_pace_sec) s += ` · ${formatPace(w.avg_pace_sec)}`;
+    return s;
+  }
+  if (w.sport === 'swim') {
+    let s = `${w.duration_min?.toFixed(0) ?? '—'}min`;
+    if (w.distance_km) s += ` · ${(w.distance_km * 1000).toFixed(0)}m`;
+    return s;
+  }
+  if (w.sport === 'strength') {
+    let s = `${w.duration_min?.toFixed(0) ?? '—'}min`;
+    if (w.calories) s += ` · ${w.calories}kcal`;
+    return s;
+  }
+  return `${w.duration_min?.toFixed(0) ?? '—'}min`;
+}
+
+function render() {
+  if (!plan) return;
+  const planMap    = buildPlanMap(plan);
+  const workoutMap = buildWorkoutMap(workouts);
+  const today      = toYMD(new Date());
+
+  document.getElementById('weekLabel').textContent = formatWeekLabel(currentMonday);
+
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = '';
+
+  const summaryData = {
+    bike:     { planned: 0, actual: 0 },
+    run:      { planned: 0, actual: 0 },
+    swim:     { planned: 0, actual: 0 },
+    strength: { planned: 0, actual: 0 },
+  };
+
+  for (let i = 0; i < 7; i++) {
+    const date        = addDays(currentMonday, i);
+    const ymd         = toYMD(date);
+    const isToday     = ymd === today;
+    const sessions    = planMap[ymd] || [];
+    const dayWorkouts = workoutMap[ymd] || [];
+
+    for (const s of sessions)    { if (summaryData[s.sport]) summaryData[s.sport].planned += s.duration_min || 0; }
+    for (const w of dayWorkouts) { if (summaryData[w.sport]) summaryData[w.sport].actual  += w.duration_min || 0; }
+
+    const col = document.createElement('div');
+    col.className = 'day-col' + (isToday ? ' today' : '');
+
+    const dayNum = date.getDate();
+    const dateEl = isToday
+      ? `<div class="day-date today-date">${dayNum}</div>`
+      : `<div class="day-date">${dayNum}</div>`;
+
+    col.innerHTML = `
+      <div class="day-header">
+        <div class="day-name">${DAY_NAMES[i].slice(0, 3)}</div>
+        ${dateEl}
+      </div>
+      <div class="day-sessions"></div>
+    `;
+    cal.appendChild(col);
+
+    const sessionsEl = col.querySelector('.day-sessions');
+    const matchedIds = new Set();
+
+    for (const session of sessions) {
+      const matched = dayWorkouts.find(w => w.plan_session_id === session.id && !matchedIds.has(w.id));
+      if (matched) matchedIds.add(matched.id);
+      renderCard(sessionsEl, session, matched || null);
+    }
+
+    for (const w of dayWorkouts) {
+      if (!matchedIds.has(w.id)) renderCard(sessionsEl, null, w);
+    }
+  }
+
+  renderWeekSummary(summaryData);
+}
+
+function renderCard(container, session, workout) {
+  const sport = workout?.sport ?? session?.sport ?? 'bike';
+  const icon  = SPORT_ICON[sport] ?? '🏋️';
+  const cls   = cardClass(workout);
+  const stat  = cardStat(workout, session ?? { sport, duration_min: workout?.duration_min, targets: {}, type: '' });
+  const score = workout?.compliance_score;
+  const label = session ? (session.type ?? session.sport) : (workout?.sport ?? '');
+
+  const card = document.createElement('div');
+  card.className = `workout-card ${cls}`;
+  card.innerHTML = `
+    <div class="card-sport">${icon}</div>
+    <div class="card-title">${esc(label)}</div>
+    <div class="card-stat">${esc(stat)}</div>
+    ${score != null ? `<div class="card-score">${score}</div>` : ''}
+  `;
+  card.addEventListener('click', () => openPanel(session, workout));
+  container.appendChild(card);
+}
+
+function renderWeekSummary(data) {
+  const el = document.getElementById('weekSummary');
+  el.innerHTML = '';
+  const sports = Object.entries(data).filter(([, v]) => v.planned > 0 || v.actual > 0);
+  if (!sports.length) {
+    el.innerHTML = '<div style="color:#475569;font-size:12px;padding:2px 0">No sessions this week</div>';
+    return;
+  }
+  for (const [sport, { planned, actual }] of sports) {
+    const pill = document.createElement('div');
+    pill.className = 'summary-pill';
+    pill.innerHTML = `
+      <span class="icon">${SPORT_ICON[sport]}</span>
+      <span class="label">${sport}</span>
+      <span class="value">${Math.round(actual)}min</span>
+      <span class="planned">/ ${Math.round(planned)}min planned</span>
+    `;
+    el.appendChild(pill);
+  }
+}
+
+function openPanel(session, workout) {
+  const sport = workout?.sport ?? session?.sport ?? 'bike';
+  const date  = workout?.date ?? '—';
+
+  document.getElementById('panelIcon').textContent     = SPORT_ICON[sport] ?? '🏋️';
+  document.getElementById('panelTitle').textContent    = `${sport.charAt(0).toUpperCase() + sport.slice(1)}${session ? ' — ' + (session.type ?? '') : ''}`;
+  document.getElementById('panelSubtitle').textContent = date;
+  document.getElementById('panelBody').innerHTML       = buildPanelBody(session, workout);
+  document.getElementById('detailPanel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function buildPanelBody(session, workout) {
+  const parts = [];
+
+  if (workout) {
+    const badgeClass = workout.status === 'complete' ? 'badge-complete'
+                     : (workout.status === 'awaiting_feedback' || workout.status === 'processing') ? 'badge-awaiting'
+                     : 'badge-unplanned';
+    const badgeText  = workout.status === 'awaiting_feedback' ? 'Awaiting feedback'
+                     : workout.status === 'processing' ? 'Processing'
+                     : workout.status === 'complete' ? 'Complete'
+                     : esc(workout.status ?? 'Synced');
+    parts.push(`<div style="margin-bottom:16px"><span class="status-badge ${badgeClass}">${badgeText}</span></div>`);
+  }
+
+  const metrics = buildMetrics(workout, session);
+  if (metrics.length) {
+    parts.push(`
+      <div class="panel-section">
+        <div class="panel-section-title">Metrics</div>
+        <div class="metrics-grid">${metrics.map(([l, v, u]) => `
+          <div class="metric-box">
+            <div class="metric-label">${l}</div>
+            <div class="metric-value">${v}<span class="metric-unit">${u ? ' ' + u : ''}</span></div>
+          </div>`).join('')}
+        </div>
+      </div>`);
+  }
+
+  if (workout?.compliance_score != null) {
+    const s   = workout.compliance_score;
+    const cls = s >= 80 ? 'good' : s >= 60 ? 'ok' : 'poor';
+    parts.push(`
+      <div class="panel-section">
+        <div class="panel-section-title">Compliance</div>
+        <div class="compliance-bar-wrap">
+          <div class="compliance-score-row">
+            <span class="compliance-score-num ${cls}">${s}</span>
+            <span class="compliance-label">/ 100</span>
+          </div>
+          <div class="compliance-bar-bg">
+            <div class="compliance-bar-fill ${cls}" style="width:${s}%"></div>
+          </div>
+        </div>
+      </div>`);
+  }
+
+  if (!workout && session?.coaching_notes) {
+    parts.push(`
+      <div class="panel-section">
+        <div class="panel-section-title">Coach notes</div>
+        <div class="coaching-report">${esc(session.coaching_notes)}</div>
+      </div>`);
+  }
+
+  if (workout?.coaching_report) {
+    // esc() first to prevent XSS, then apply bold markdown transform on the escaped string
+    const report = esc(workout.coaching_report)
+      .replace(/^#+ .+?(&lt;br&gt;|<br>)/gm, '')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .trim();
+    parts.push(`
+      <div class="panel-section">
+        <div class="panel-section-title">Coaching report</div>
+        <div class="coaching-report">${report}</div>
+      </div>`);
+  } else if (workout && workout.status !== 'awaiting_feedback') {
+    parts.push(`
+      <div class="panel-section">
+        <div class="panel-section-title">Coaching report</div>
+        <div class="coaching-report-empty">No coaching report yet.</div>
+      </div>`);
+  }
+
+  if (workout?.feedback) {
+    parts.push(`
+      <div class="panel-section">
+        <div class="panel-section-title">Your feedback</div>
+        <div class="feedback-box">${esc(workout.feedback)}</div>
+      </div>`);
+  }
+
+  if (session?.targets) {
+    parts.push(`
+      <div class="panel-section">
+        <div class="panel-section-title">Session plan</div>
+        <div class="coaching-report">${esc(formatTargets(session))}</div>
+      </div>`);
+  }
+
+  return parts.join('');
+}
+
+function buildMetrics(workout, session) {
+  if (!workout) {
+    const m = [];
+    if (session?.duration_min)        m.push(['Duration',   session.duration_min, 'min']);
+    if (session?.targets?.tss_target) m.push(['Target TSS', session.targets.tss_target, '']);
+    return m;
+  }
+  const w = workout;
+  const m = [];
+  if (w.duration_min) m.push(['Duration', w.duration_min.toFixed(0), 'min']);
+  if (w.calories)     m.push(['Calories', w.calories, 'kcal']);
+  if (w.sport === 'bike') {
+    if (w.normalized_power)  m.push(['NP',  w.normalized_power,            'W']);
+    if (w.tss)               m.push(['TSS', Math.round(w.tss),             '']);
+    if (w.variability_index) m.push(['VI',  w.variability_index,           '']);
+    if (w.intensity_factor)  m.push(['IF',  w.intensity_factor,            '']);
+  }
+  if (w.sport === 'run') {
+    if (w.avg_pace_sec) m.push(['Avg pace', formatPace(w.avg_pace_sec), '']);
+    if (w.avg_hr)       m.push(['Avg HR',   w.avg_hr, 'bpm']);
+  }
+  if (w.sport === 'swim') {
+    if (w.distance_km)  m.push(['Distance', (w.distance_km * 1000).toFixed(0), 'm']);
+    if (w.avg_pace_sec) m.push(['Pace',     formatPace(w.avg_pace_sec),        '/100m']);
+  }
+  if (w.avg_hr && w.sport !== 'run') m.push(['Avg HR', w.avg_hr, 'bpm']);
+  return m;
+}
+
+function formatTargets(session) {
+  const t     = session.targets ?? {};
+  const lines = [];
+  if (session.sport === 'bike') {
+    if (t.warmup)               lines.push(`Warmup: ${t.warmup}`);
+    if (t.main_set)             lines.push(`Main: ${t.main_set}`);
+    if (t.cooldown)             lines.push(`Cooldown: ${t.cooldown}`);
+  }
+  if (session.sport === 'swim') {
+    if (t.main_set?.description) lines.push(t.main_set.description);
+  }
+  if (session.sport === 'strength') {
+    (t.exercises || []).forEach(e => {
+      lines.push(`${e.name}: ${e.sets}×${e.reps ?? (e.distance_m + 'm')}${e.per_side ? '/side' : ''}`);
+    });
+    if (t.mobility_min) lines.push(`Mobility: ${t.mobility_min}min ${t.mobility_focus || ''}`);
+  }
+  if (session.coaching_notes) lines.push('', `Notes: ${session.coaching_notes}`);
+  return lines.join('\n');
+}
+
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+}
+
+document.getElementById('prevWeek').addEventListener('click',  () => { currentMonday = addDays(currentMonday, -7); render(); });
+document.getElementById('nextWeek').addEventListener('click',  () => { currentMonday = addDays(currentMonday,  7); render(); });
+document.getElementById('todayBtn').addEventListener('click',  () => { currentMonday = getMonday(new Date());       render(); });
+document.getElementById('panelClose').addEventListener('click', closePanel);
+document.getElementById('overlay').addEventListener('click',   closePanel);
+
+async function init() {
+  // Single regex: handles trailing slash, index.html, and deep paths
+  const base = document.location.pathname.replace(/\/[^/]*$/, '');
+  try {
+    const [planRes, workoutsRes] = await Promise.all([
+      fetch(base + '/plan.json'),
+      fetch(base + '/workouts.json'),
+    ]);
+    if (!planRes.ok)     throw new Error(`plan.json: ${planRes.status}`);
+    if (!workoutsRes.ok) throw new Error(`workouts.json: ${workoutsRes.status}`);
+    plan     = await planRes.json();
+    workouts = await workoutsRes.json();
+    render();
+  } catch (err) {
+    document.getElementById('calendar').innerHTML =
+      `<div style="padding:40px;color:#ef4444;grid-column:1/-1">Failed to load data: ${err.message}</div>`;
+  }
+}
+
+init();
+  </script>
+</body>
+</html>
