@@ -516,11 +516,10 @@ function render() {
     weekMonday = addDays(weekMonday, 7);
   }
 
-  // Scroll to current week — offset by sticky header height
+  // Scroll to current week — use offsetTop (document-relative, not viewport-relative)
   if (todayWeekEl) setTimeout(() => {
     const headerH = document.querySelector('.header')?.offsetHeight ?? 0;
-    const top = todayWeekEl.getBoundingClientRect().top + window.scrollY - headerH - 16;
-    window.scrollTo({ top, behavior: 'instant' });
+    window.scrollTo({ top: todayWeekEl.offsetTop - headerH - 12, behavior: 'instant' });
   }, 50);
 }
 
