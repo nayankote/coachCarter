@@ -39,15 +39,8 @@
     .nav-btn.today { background: #1a1a1a; color: #ffffff; border-color: #1a1a1a; }
     .nav-btn.today:hover { background: #333; }
 
-    /* ── Weekly summary strip ── */
-    .week-summary {
-      display: flex;
-      gap: 10px;
-      padding: 10px 24px;
-      background: #ffffff;
-      border-bottom: 1px solid #e8e6e0;
-      overflow-x: auto;
-    }
+    /* ── Summary pills (in week header row) ── */
+    .week-summary { display: flex; gap: 8px; }
     .summary-pill {
       display: flex; align-items: center; gap: 6px;
       background: #f7f6f3; border: 1px solid #e8e6e0; border-radius: 20px;
@@ -62,8 +55,20 @@
     .calendar-wrap {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 16px 20px 40px;
+      padding: 16px 20px 60px;
     }
+
+    .week-section { margin-bottom: 28px; }
+    .week-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px; padding-left: 2px;
+    }
+    .week-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: #999;
+    }
+    .week-label.current-week { color: #1a1a1a; }
+    .week-stats { display: flex; gap: 12px; }
 
     .calendar {
       display: grid;
@@ -115,19 +120,14 @@
     .workout-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
     .workout-card:active { transform: translateY(0); }
 
-    /* Light, clean status colours */
-    .card-planned      { background: #fff; border: 1.5px dashed #ccc; color: #888; }
-    .card-complete-good { background: #edfaf2; border: 1px solid #86efac; color: #166534; }
-    .card-complete-ok   { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
-    .card-complete-poor { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
-    .card-awaiting      { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
-    .card-unplanned     { background: #f9fafb; border: 1px solid #d1d5db; color: #6b7280; }
-
-    @keyframes pulse-border {
-      0%, 100% { border-color: #fdba74; }
-      50%       { border-color: #fed7aa; }
-    }
-    .card-awaiting { animation: pulse-border 2.5s infinite; }
+    /* Card status colours */
+    .card-planned-future { background: #fff; border: 1.5px dashed #d1d5db; color: #6b7280; }
+    .card-planned-missed { background: #fef2f2; border: 1.5px dashed #fca5a5; color: #991b1b; }
+    .card-complete-good  { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+    .card-complete-ok    { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+    .card-complete-poor  { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+    .card-awaiting       { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+    .card-unplanned      { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
 
     /* Card header row: sport icon + session type label */
     .card-header { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
@@ -140,13 +140,10 @@
     /* Secondary metric row */
     .card-metrics { font-size: 11px; font-weight: 500; margin-top: 3px; opacity: 0.8; }
 
-    /* Badge top-right */
-    .card-badge {
-      position: absolute; top: 7px; right: 8px;
-      font-size: 10px; font-weight: 700;
-      padding: 2px 6px; border-radius: 10px;
-      background: rgba(0,0,0,0.07);
-    }
+    /* WhatsApp-style ticks — bottom right of card */
+    .card-ticks { position: absolute; bottom: 7px; right: 8px; font-size: 12px; letter-spacing: -2px; line-height: 1; }
+    .tick-sent     { color: #9ca3af; } /* grey  — awaiting feedback */
+    .tick-received { color: #3b82f6; } /* blue  — feedback received */
 
     /* ── Center modal ── */
     .panel-overlay {
@@ -255,17 +252,12 @@
 
   <header class="header">
     <div class="header-title">CoachCarter</div>
-    <div class="header-week" id="weekLabel">—</div>
     <div class="header-nav">
-      <button class="nav-btn" id="prevWeek">&#8592;</button>
       <button class="nav-btn today" id="todayBtn">Today</button>
-      <button class="nav-btn" id="nextWeek">&#8594;</button>
     </div>
   </header>
 
-  <div class="week-summary" id="weekSummary"></div>
-  <div class="calendar-wrap">
-    <div class="calendar" id="calendar"></div>
+  <div class="calendar-wrap" id="calendarWrap">
   </div>
 
   <div class="panel-overlay" id="overlay">
@@ -293,7 +285,7 @@ const DAY_NAMES  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday
 
 let plan = null;
 let workouts = [];
-let currentMonday = getMonday(new Date());
+let todayWeekEl = null;
 
 function getMonday(d) {
   const dt = new Date(d);
@@ -349,8 +341,11 @@ function buildWorkoutMap(workouts) {
   return map;
 }
 
-function cardClass(workout) {
-  if (!workout) return 'card-planned';
+function cardClass(workout, dateYmd) {
+  if (!workout) {
+    const today = toYMD(new Date());
+    return dateYmd > today ? 'card-planned-future' : 'card-planned-missed';
+  }
   if (workout.status === 'awaiting_feedback' || workout.status === 'processing') return 'card-awaiting';
   if (workout.status === 'complete') {
     const s = workout.compliance_score;
@@ -421,10 +416,7 @@ function cardParts(workout, session) {
     if (w.avg_hr) parts.push(`${w.avg_hr} bpm`);
     secondary = parts.join(' · ');
   }
-  const score = w.compliance_score;
-  const badge = score != null ? `${score}%`
-              : (w.status === 'awaiting_feedback' || w.status === 'processing') ? '⏳' : '';
-  return [dur, secondary, badge];
+  return [dur, secondary];
 }
 
 function render() {
@@ -433,74 +425,108 @@ function render() {
   const workoutMap = buildWorkoutMap(workouts);
   const today      = toYMD(new Date());
 
-  document.getElementById('weekLabel').textContent = formatWeekLabel(currentMonday);
+  const wrap = document.getElementById('calendarWrap');
+  wrap.innerHTML = '';
+  todayWeekEl = null;
 
-  const cal = document.getElementById('calendar');
-  cal.innerHTML = '';
+  // Range: from earliest data to 2 weeks past today
+  const planStart = new Date(plan.plan_start_date + 'T00:00:00');
+  const allDates  = workouts.map(w => new Date(w.date + 'T00:00:00')).filter(d => !isNaN(d));
+  const earliest  = allDates.length ? new Date(Math.min(planStart, ...allDates)) : planStart;
+  const latest    = addDays(new Date(), 14);
 
-  const summaryData = {
-    bike:     { planned: 0, actual: 0 },
-    run:      { planned: 0, actual: 0 },
-    swim:     { planned: 0, actual: 0 },
-    strength: { planned: 0, actual: 0 },
-  };
+  let weekMonday = getMonday(earliest);
 
-  for (let i = 0; i < 7; i++) {
-    const date        = addDays(currentMonday, i);
-    const ymd         = toYMD(date);
-    const isToday     = ymd === today;
-    const sessions    = planMap[ymd] || [];
-    const dayWorkouts = workoutMap[ymd] || [];
+  while (weekMonday <= latest) {
+    const weekEnd = addDays(weekMonday, 6);
+    const containsToday = today >= toYMD(weekMonday) && today <= toYMD(weekEnd);
+    const summaryData = { bike:{planned:0,actual:0}, run:{planned:0,actual:0}, swim:{planned:0,actual:0}, strength:{planned:0,actual:0} };
 
-    for (const s of sessions)    { if (summaryData[s.sport]) summaryData[s.sport].planned += s.duration_min || 0; }
-    for (const w of dayWorkouts) { if (summaryData[w.sport]) summaryData[w.sport].actual  += w.duration_min || 0; }
+    const section = document.createElement('div');
+    section.className = 'week-section';
+    if (containsToday) { section.id = 'currentWeek'; todayWeekEl = section; }
 
-    const col = document.createElement('div');
-    col.className = 'day-col' + (isToday ? ' today' : '');
+    const header = document.createElement('div');
+    header.className = 'week-header';
+    const labelEl = document.createElement('div');
+    labelEl.className = 'week-label' + (containsToday ? ' current-week' : '');
+    labelEl.textContent = formatWeekLabel(weekMonday);
+    header.appendChild(labelEl);
+    header.appendChild(document.createElement('div')); // placeholder for stats (filled after grid)
+    section.appendChild(header);
 
-    const dayNum = date.getDate();
-    const dateEl = isToday
-      ? `<div class="day-date today-date">${dayNum}</div>`
-      : `<div class="day-date">${dayNum}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'calendar';
 
-    col.innerHTML = `
-      <div class="day-header">
-        <div class="day-name">${DAY_NAMES[i].slice(0, 3)}</div>
-        ${dateEl}
-      </div>
-      <div class="day-sessions"></div>
-    `;
-    cal.appendChild(col);
+    for (let i = 0; i < 7; i++) {
+      const date        = addDays(weekMonday, i);
+      const ymd         = toYMD(date);
+      const isToday     = ymd === today;
+      const sessions    = planMap[ymd] || [];
+      const dayWorkouts = workoutMap[ymd] || [];
 
-    const sessionsEl = col.querySelector('.day-sessions');
-    const matchedIds = new Set();
+      for (const s of sessions)    { if (summaryData[s.sport]) summaryData[s.sport].planned += s.duration_min || 0; }
+      for (const w of dayWorkouts) { if (summaryData[w.sport]) summaryData[w.sport].actual  += w.duration_min || 0; }
 
-    for (const session of sessions) {
-      const matched = dayWorkouts.find(w => w.plan_session_id === session.id && !matchedIds.has(w.id));
-      if (matched) matchedIds.add(matched.id);
-      renderCard(sessionsEl, session, matched || null);
+      const col = document.createElement('div');
+      col.className = 'day-col' + (isToday ? ' today' : '');
+
+      const dayNum = date.getDate();
+      const dateEl = isToday
+        ? `<div class="day-date today-date">${dayNum}</div>`
+        : `<div class="day-date">${dayNum}</div>`;
+
+      col.innerHTML = `
+        <div class="day-header">
+          <div class="day-name">${DAY_NAMES[i].slice(0, 3)}</div>
+          ${dateEl}
+        </div>
+        <div class="day-sessions"></div>
+      `;
+      grid.appendChild(col);
+
+      const sessionsEl = col.querySelector('.day-sessions');
+      const matchedIds = new Set();
+
+      for (const session of sessions) {
+        const matched = dayWorkouts.find(w => w.plan_session_id === session.id && !matchedIds.has(w.id));
+        if (matched) matchedIds.add(matched.id);
+        renderCard(sessionsEl, session, matched || null, ymd);
+      }
+      for (const w of dayWorkouts) {
+        if (!matchedIds.has(w.id)) renderCard(sessionsEl, null, w, ymd);
+      }
     }
 
-    for (const w of dayWorkouts) {
-      if (!matchedIds.has(w.id)) renderCard(sessionsEl, null, w);
-    }
+    section.appendChild(grid);
+    renderWeekSummary(section, summaryData);
+    wrap.appendChild(section);
+    weekMonday = addDays(weekMonday, 7);
   }
 
-  renderWeekSummary(summaryData);
+  // Scroll to current week after paint
+  if (todayWeekEl) setTimeout(() => todayWeekEl.scrollIntoView({ block: 'start' }), 50);
 }
 
-function renderCard(container, session, workout) {
+function cardTicks(workout) {
+  if (!workout) return '';
+  if (workout.status === 'complete') return '<span class="card-ticks tick-received">✓✓</span>';
+  if (workout.status === 'awaiting_feedback' || workout.status === 'processing') return '<span class="card-ticks tick-sent">✓</span>';
+  return '';
+}
+
+function renderCard(container, session, workout, dateYmd) {
   const sport = workout?.sport ?? session?.sport ?? 'bike';
   const icon  = sportIcon(sport);
-  const cls   = cardClass(workout);
+  const cls   = cardClass(workout, dateYmd);
   const typeLabel = session ? sessionTypeLabel(session.sport, session.type, null)
                             : sessionTypeLabel(workout?.sport, null, workout?.activity_name);
-  const [dur, secondary, badge] = cardParts(workout, session ?? { sport, duration_min: workout?.duration_min, targets: {} });
+  const [dur, secondary] = cardParts(workout, session ?? { sport, duration_min: workout?.duration_min, targets: {} });
 
   const card = document.createElement('div');
   card.className = `workout-card ${cls}`;
   card.innerHTML = `
-    ${badge ? `<div class="card-badge">${esc(badge)}</div>` : ''}
+    ${cardTicks(workout)}
     <div class="card-header">
       <span class="card-sport">${icon}</span>
       <span class="card-type">${esc(typeLabel)}</span>
@@ -512,25 +538,24 @@ function renderCard(container, session, workout) {
   container.appendChild(card);
 }
 
-function renderWeekSummary(data) {
-  const el = document.getElementById('weekSummary');
-  el.innerHTML = '';
+function renderWeekSummary(section, data) {
   const sports = Object.entries(data).filter(([, v]) => v.planned > 0 || v.actual > 0);
-  if (!sports.length) {
-    el.innerHTML = '<div style="color:#475569;font-size:12px;padding:2px 0">No sessions this week</div>';
-    return;
-  }
+  if (!sports.length) return;
+  const strip = document.createElement('div');
+  strip.className = 'week-summary';
   for (const [sport, { planned, actual }] of sports) {
     const pill = document.createElement('div');
     pill.className = 'summary-pill';
     pill.innerHTML = `
       <span class="icon">${sportIcon(sport)}</span>
-      <span class="label">${sport}</span>
       <span class="value">${Math.round(actual)}min</span>
-      <span class="planned">/ ${Math.round(planned)}min planned</span>
+      ${planned > 0 ? `<span class="planned">/ ${Math.round(planned)}min</span>` : ''}
     `;
-    el.appendChild(pill);
+    strip.appendChild(pill);
   }
+  // Slot into the header placeholder (second child of .week-header)
+  const header = section.querySelector('.week-header');
+  if (header) header.replaceChild(strip, header.children[1]);
 }
 
 function openPanel(session, workout) {
@@ -779,9 +804,9 @@ function esc(str) {
     .replace(/\n/g, '<br>');
 }
 
-document.getElementById('prevWeek').addEventListener('click',  () => { currentMonday = addDays(currentMonday, -7); render(); });
-document.getElementById('nextWeek').addEventListener('click',  () => { currentMonday = addDays(currentMonday,  7); render(); });
-document.getElementById('todayBtn').addEventListener('click',  () => { currentMonday = getMonday(new Date());       render(); });
+document.getElementById('todayBtn').addEventListener('click', () => {
+  if (todayWeekEl) todayWeekEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 document.getElementById('panelClose').addEventListener('click', closePanel);
 document.getElementById('overlay').addEventListener('click', e => { if (e.target === document.getElementById('overlay')) closePanel(); });
 
@@ -797,8 +822,8 @@ async function init() {
     workouts = await workoutsRes.json();
     render();
   } catch (err) {
-    document.getElementById('calendar').innerHTML =
-      `<div style="padding:40px;color:#ef4444;grid-column:1/-1">Failed to load data: ${esc(err.message)}</div>`;
+    document.getElementById('calendarWrap').innerHTML =
+      `<div style="padding:40px;color:#ef4444">Failed to load data: ${esc(err.message)}</div>`;
   }
 }
 
