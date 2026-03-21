@@ -39,17 +39,15 @@
     .nav-btn.today { background: #1a1a1a; color: #ffffff; border-color: #1a1a1a; }
     .nav-btn.today:hover { background: #333; }
 
-    /* ── Summary pills (in week header row) ── */
-    .week-summary { display: flex; gap: 8px; }
+    /* ── Summary pills ── */
+    .week-summary { display: flex; gap: 6px; }
     .summary-pill {
-      display: flex; align-items: center; gap: 6px;
-      background: #f7f6f3; border: 1px solid #e8e6e0; border-radius: 20px;
-      padding: 4px 12px; white-space: nowrap; font-size: 12px;
+      display: flex; align-items: center; gap: 4px;
+      font-size: 12px; white-space: nowrap; color: #6b7280;
     }
-    .summary-pill .icon { font-size: 13px; }
-    .summary-pill .label { color: #888; text-transform: capitalize; }
+    .summary-pill .icon { font-size: 12px; }
     .summary-pill .value { font-weight: 600; color: #1a1a1a; }
-    .summary-pill .planned { color: #aaa; margin-left: 2px; }
+    .summary-pill .planned { color: #aaa; }
 
     /* ── Calendar grid ── */
     .calendar-wrap {
@@ -58,32 +56,43 @@
       padding: 16px 20px 60px;
     }
 
-    .week-section { margin-bottom: 28px; }
+    /* Each week is a contained card */
+    .week-section {
+      margin-bottom: 16px;
+      background: #ffffff;
+      border: 1px solid #e8e6e0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .week-section.current-week-section {
+      border-color: #1a1a1a;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    }
     .week-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 8px; padding-left: 2px;
+      padding: 10px 14px;
+      border-bottom: 1px solid #e8e6e0;
+      background: #fafaf9;
     }
     .week-label {
       font-size: 11px; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.8px; color: #999;
     }
     .week-label.current-week { color: #1a1a1a; }
-    .week-stats { display: flex; gap: 12px; }
 
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 1px;
       background: #e8e6e0;
-      border-radius: 10px;
-      overflow: hidden;
     }
 
     .day-col {
-      background: #f7f6f3;
+      background: #fafaf9;
       display: flex;
       flex-direction: column;
-      min-height: 200px;
+      min-height: 160px;
     }
     .day-col.today { background: #ffffff; }
     .day-col.today .day-header { border-bottom-color: #1a1a1a; }
@@ -442,8 +451,10 @@ function render() {
     const containsToday = today >= toYMD(weekMonday) && today <= toYMD(weekEnd);
     const summaryData = { bike:{planned:0,actual:0}, run:{planned:0,actual:0}, swim:{planned:0,actual:0}, strength:{planned:0,actual:0} };
 
+    const weekStarted = toYMD(weekMonday) <= toYMD(new Date());
+
     const section = document.createElement('div');
-    section.className = 'week-section';
+    section.className = 'week-section' + (containsToday ? ' current-week-section' : '');
     if (containsToday) { section.id = 'currentWeek'; todayWeekEl = section; }
 
     const header = document.createElement('div');
@@ -452,7 +463,8 @@ function render() {
     labelEl.className = 'week-label' + (containsToday ? ' current-week' : '');
     labelEl.textContent = formatWeekLabel(weekMonday);
     header.appendChild(labelEl);
-    header.appendChild(document.createElement('div')); // placeholder for stats (filled after grid)
+    // Stats placeholder — only filled for weeks that have started
+    header.appendChild(weekStarted ? document.createElement('div') : document.createTextNode(''));
     section.appendChild(header);
 
     const grid = document.createElement('div');
@@ -499,13 +511,17 @@ function render() {
     }
 
     section.appendChild(grid);
-    renderWeekSummary(section, summaryData);
+    if (weekStarted) renderWeekSummary(section, summaryData);
     wrap.appendChild(section);
     weekMonday = addDays(weekMonday, 7);
   }
 
-  // Scroll to current week after paint
-  if (todayWeekEl) setTimeout(() => todayWeekEl.scrollIntoView({ block: 'start' }), 50);
+  // Scroll to current week — offset by sticky header height
+  if (todayWeekEl) setTimeout(() => {
+    const headerH = document.querySelector('.header')?.offsetHeight ?? 0;
+    const top = todayWeekEl.getBoundingClientRect().top + window.scrollY - headerH - 16;
+    window.scrollTo({ top, behavior: 'instant' });
+  }, 50);
 }
 
 function cardTicks(workout) {
@@ -555,7 +571,7 @@ function renderWeekSummary(section, data) {
   }
   // Slot into the header placeholder (second child of .week-header)
   const header = section.querySelector('.week-header');
-  if (header) header.replaceChild(strip, header.children[1]);
+  if (header?.children[1]) header.replaceChild(strip, header.children[1]);
 }
 
 function openPanel(session, workout) {
