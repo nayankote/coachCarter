@@ -1,41 +1,40 @@
 // scripts/sync-garmin.js
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
-const { createGarminClient, getActivitiesSince, downloadFitFile, deduplicateBikes } = require('../lib/garmin');
+const { createGarminClient, getNewActivities, downloadFitFile, deduplicateBikes } = require('../lib/garmin');
 const { getSupabase } = require('../lib/supabase');
 const { run: analyzeWorkout } = require('./analyze-workout');
 
 async function run() {
   const db = getSupabase();
 
-  // 1. Read last_synced_at
-  const { data: state } = await db.from('sync_state').select('last_synced_at').eq('id', 1).single();
-  const since = new Date(state.last_synced_at);
-  console.log(`[sync-garmin] Syncing since ${since.toISOString()}`);
+  // Load all known Garmin activity IDs from Supabase so we know when to stop fetching
+  const { data: existing } = await db.from('workouts').select('garmin_activity_id');
+  const knownIds = new Set((existing || []).map(r => String(r.garmin_activity_id)));
+  console.log(`[sync-garmin] ${knownIds.size} activities already in DB`);
 
-  // 2. Auth + fetch
+  // Fetch only new activities — stops automatically once a full page is already known
   const client = await createGarminClient();
-  let activities = await getActivitiesSince(client, since);
+  let activities = await getNewActivities(client, knownIds);
   activities = deduplicateBikes(activities);
-  console.log(`[sync-garmin] ${activities.length} new activities`);
+  console.log(`[sync-garmin] ${activities.length} new activities to sync`);
 
-  // 3. Process each — store then immediately analyze inline
+  let newCount = 0;
   for (const activity of activities) {
     const workoutId = await processActivity(client, db, activity);
     if (workoutId) {
+      newCount++;
       try {
         await analyzeWorkout(workoutId);
       } catch (err) {
         console.error(`[sync-garmin] analyze-workout failed for ${workoutId}:`, err.message);
-        // Row stays at status="synced" and will be retried on next cron run
       }
     }
   }
+  console.log(`[sync-garmin] ${newCount} new activities synced`);
 
-  // 4. Retry rows stuck at status="synced" older than 10 minutes
+  // Retry rows stuck at status="synced" older than 10 minutes
   await retryStuck(db);
 
-  // 5. Update sync_state
-  await db.from('sync_state').update({ last_synced_at: new Date().toISOString() }).eq('id', 1);
   console.log('[sync-garmin] Done');
 }
 
@@ -45,7 +44,13 @@ async function processActivity(client, db, activity) {
   const sport = normalizeSport(activityType?.typeKey);
   const date = startTimeLocal?.split(' ')[0];
 
-  const fitBuffer = await downloadFitFile(client, activityId);
+  let fitBuffer;
+  try {
+    fitBuffer = await downloadFitFile(client, activityId);
+  } catch (err) {
+    console.warn(`[sync-garmin] No FIT file for ${activityId} (${sport} ${date}) — skipping: ${err.message}`);
+    return null;
+  }
   const fitPath = `fit-files/${date}_${sport}_${activityId}.fit`;
 
   const { error: uploadError } = await db.storage.from('fit-files').upload(fitPath, fitBuffer);
