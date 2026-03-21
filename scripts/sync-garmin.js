@@ -61,6 +61,7 @@ async function processActivity(client, db, activity) {
 
   const { data: inserted, error: insertError } = await db.from('workouts').insert({
     garmin_activity_id: activityId,
+    activity_name: activity.activityName || null,
     sport,
     date,
     day_of_week: getDayOfWeek(startTimeLocal),

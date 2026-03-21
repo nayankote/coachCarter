@@ -285,7 +285,9 @@
   </div>
 
   <script>
-const SPORT_ICON = { bike: '🚴', run: '🏃', swim: '🏊', strength: '💪' };
+const SPORT_ICON = { bike: '🚴', run: '🏃', swim: '🏊', strength: '💪', walking: '🚶', multi_sport: '🏅' };
+function sportIcon(sport) { return SPORT_ICON[sport] ?? '🏷️'; }
+const KNOWN_SPORTS = new Set(['bike','run','swim','strength','walking','multi_sport']);
 const DAY_OFFSET = { monday:0, tuesday:1, wednesday:2, thursday:3, friday:4, saturday:5, sunday:6 };
 const DAY_NAMES  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
@@ -371,9 +373,11 @@ function fmtDuration(min) {
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}` : `${m}min`;
 }
 
-function sessionTypeLabel(sport, type) {
+function sessionTypeLabel(sport, type, activityName) {
+  // Unknown sport: use Garmin's activity name directly
+  if (sport && !KNOWN_SPORTS.has(sport)) return activityName || sport.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const sportName = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : '';
-  if (!type || type === sport) return sportName;
+  if (!type || type === sport) return activityName && !KNOWN_SPORTS.has(sport) ? activityName : sportName;
   const typePart = type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   // Avoid "Bike Bike" — only prepend sport if type doesn't already start with it
   if (typePart.toLowerCase().startsWith(sport?.toLowerCase() ?? '')) return typePart;
@@ -410,6 +414,12 @@ function cardParts(workout, session) {
     secondary = parts.join(' · ');
   } else if (w.sport === 'strength') {
     if (w.calories) secondary = `${w.calories} kcal`;
+  } else {
+    // Unknown sport (walking, multi_sport, etc.)
+    const parts = [];
+    if (w.distance_km) parts.push(`${w.distance_km.toFixed(1)} km`);
+    if (w.avg_hr) parts.push(`${w.avg_hr} bpm`);
+    secondary = parts.join(' · ');
   }
   const score = w.compliance_score;
   const badge = score != null ? `${score}%`
@@ -481,10 +491,10 @@ function render() {
 
 function renderCard(container, session, workout) {
   const sport = workout?.sport ?? session?.sport ?? 'bike';
-  const icon  = SPORT_ICON[sport] ?? '🏋️';
+  const icon  = sportIcon(sport);
   const cls   = cardClass(workout);
-  const typeLabel = session ? sessionTypeLabel(session.sport, session.type)
-                            : sessionTypeLabel(workout?.sport, null);
+  const typeLabel = session ? sessionTypeLabel(session.sport, session.type, null)
+                            : sessionTypeLabel(workout?.sport, null, workout?.activity_name);
   const [dur, secondary, badge] = cardParts(workout, session ?? { sport, duration_min: workout?.duration_min, targets: {} });
 
   const card = document.createElement('div');
@@ -514,7 +524,7 @@ function renderWeekSummary(data) {
     const pill = document.createElement('div');
     pill.className = 'summary-pill';
     pill.innerHTML = `
-      <span class="icon">${SPORT_ICON[sport]}</span>
+      <span class="icon">${sportIcon(sport)}</span>
       <span class="label">${sport}</span>
       <span class="value">${Math.round(actual)}min</span>
       <span class="planned">/ ${Math.round(planned)}min planned</span>
@@ -527,8 +537,8 @@ function openPanel(session, workout) {
   const sport = workout?.sport ?? session?.sport ?? 'bike';
   const date  = workout?.date ?? '—';
 
-  document.getElementById('panelIcon').textContent     = SPORT_ICON[sport] ?? '🏋️';
-  document.getElementById('panelTitle').textContent    = `${sport.charAt(0).toUpperCase() + sport.slice(1)}${session ? ' — ' + (session.type ?? '') : ''}`;
+  document.getElementById('panelIcon').textContent     = sportIcon(sport);
+  document.getElementById('panelTitle').textContent    = sessionTypeLabel(sport, session?.type ?? null, workout?.activity_name);
   document.getElementById('panelSubtitle').textContent = date;
   document.getElementById('panelBody').innerHTML       = buildPanelBody(session, workout);
   document.getElementById('detailPanel').classList.add('open');
