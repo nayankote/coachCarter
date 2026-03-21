@@ -3,6 +3,7 @@ require('dotenv').config();
 const { getSupabase } = require('../lib/supabase');
 const { loadPlan, matchSession } = require('../lib/plan');
 const { generateCoachingReport, generateStrengthCompliance } = require('../lib/coaching');
+const { sendFeedbackEmail } = require('../lib/email');
 
 async function run(workoutId) {
   const db = getSupabase();
@@ -32,6 +33,14 @@ async function run(workoutId) {
     session,
     feedback: workout.feedback,
     plan,
+  });
+
+  // Send final coaching report to athlete (fixes gap: previously only stored, never emailed)
+  await sendFeedbackEmail({
+    to: process.env.ATHLETE_EMAIL,
+    subject: `[CoachCarter] ${workout.day_of_week} ${workout.sport} — coaching report`,
+    body: coachingReport,
+    replyToMessageId: workout.email_message_id,
   });
 
   await db.from('workouts').update({
