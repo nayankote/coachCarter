@@ -574,28 +574,15 @@ function buildPanelBody(session, workout) {
     parts.push(`<div style="margin-bottom:16px"><span class="status-badge ${badgeClass}">${badgeText}</span></div>`);
   }
 
-  const stats = buildStats(workout, session);
-  if (stats.length) {
+  const rows = buildMetricsTable(workout, session);
+  if (rows.length) {
+    const hasPlanned = rows.some(([,p]) => p !== '—');
     parts.push(`
       <div class="panel-section">
-        <div class="stats-grid">${stats.map(([l, v, u]) => `
-          <div class="stat-cell">
-            <div class="stat-label">${l}</div>
-            <div class="stat-value">${v}<span class="stat-unit">${u ? ' ' + u : ''}</span></div>
-          </div>`).join('')}
-        </div>
-      </div>`);
-  }
-
-  const pva = buildPlannedVsActual(workout, session);
-  if (pva.length) {
-    parts.push(`
-      <div class="panel-section">
-        <div class="panel-section-title">Planned vs Actual</div>
         <table class="pva-table">
-          <thead><tr><th></th><th>Planned</th><th>Actual</th></tr></thead>
-          <tbody>${pva.map(([label, planned, actual, cls]) =>
-            `<tr><td>${label}</td><td>${planned}</td><td class="${cls}">${actual}</td></tr>`
+          <thead><tr><th></th>${hasPlanned ? '<th>Planned</th>' : ''}<th>Actual</th></tr></thead>
+          <tbody>${rows.map(([label, planned, actual, cls]) =>
+            `<tr><td>${label}</td>${hasPlanned ? `<td>${planned}</td>` : ''}<td class="${cls ?? ''}">${actual}</td></tr>`
           ).join('')}</tbody>
         </table>
       </div>`);
@@ -672,100 +659,104 @@ function fmtPace100m(sec) {
 }
 
 // 3-4 key numbers shown as hero stats at top of panel
-function buildStats(workout, session) {
-  // Planned-only: show targets from plan
-  if (!workout) {
-    const m = [];
-    const t = session?.targets ?? {};
-    if (session?.duration_min) m.push(['Duration', fmtDuration(session.duration_min), '']);
-    if (session?.sport === 'bike') {
-      if (t.tss_target) m.push(['Target TSS', t.tss_target, '']);
-      if (t.power_min && t.power_max) m.push(['Power zone', `${t.power_min}–${t.power_max}`, 'W']);
-    }
-    if (session?.sport === 'swim') {
-      if (t.total_distance_m) m.push(['Distance', t.total_distance_m, 'm']);
-      if (t.main_set?.css_target_sec_per_100m) m.push(['CSS target', fmtPace100m(t.main_set.css_target_sec_per_100m), '']);
-    }
-    if (session?.sport === 'run' && t.tss_target) m.push(['Target TSS', t.tss_target, '']);
-    return m;
-  }
-
+// Unified metrics table: [label, planned, actual, cssClass]
+// planned = '—' when no target. actual = '—' when no workout yet.
+function buildMetricsTable(workout, session) {
+  const t = session?.targets ?? {};
   const w = workout;
-  const m = [];
-  if (w.duration_min != null) m.push(['Duration', fmtDuration(w.duration_min), '']);
-
-  if (w.sport === 'bike') {
-    if (w.distance_km != null)      m.push(['Distance', w.distance_km.toFixed(1), 'km']);
-    if (w.avg_power != null)        m.push(['Avg Power', w.avg_power, 'W']);
-    if (w.normalized_power != null) m.push(['NP', w.normalized_power, 'W']);
-    if (w.tss != null)              m.push(['TSS', Math.round(w.tss), '']);
-    if (w.intensity_factor != null) m.push(['IF', w.intensity_factor, '']);
-    if (w.variability_index != null) m.push(['VI', w.variability_index, '']);
-  } else if (w.sport === 'run') {
-    if (w.distance_km != null)  m.push(['Distance', w.distance_km.toFixed(2), 'km']);
-    if (w.avg_pace_sec != null) m.push(['Pace', formatPace(w.avg_pace_sec), '/km']);
-    if (w.tss != null)          m.push(['TSS', Math.round(w.tss), '']);
-  } else if (w.sport === 'swim') {
-    if (w.distance_km != null)  m.push(['Distance', (w.distance_km * 1000).toFixed(0), 'm']);
-    if (w.avg_pace_sec != null) m.push(['Pace', fmtPace100m(w.avg_pace_sec), '']);
-    if (w.tss != null)          m.push(['sTSS', Math.round(w.tss), '']);
-  }
-
-  // HR min / avg / max as separate cells — all endurance sports
-  if (w.sport !== 'strength') {
-    if (w.min_hr != null) m.push(['HR Min', w.min_hr, 'bpm']);
-    if (w.avg_hr != null) m.push(['HR Avg', w.avg_hr, 'bpm']);
-    if (w.max_hr != null) m.push(['HR Max', w.max_hr, 'bpm']);
-    if (w.hr_drift != null) m.push(['HR Drift', `${w.hr_drift > 0 ? '+' : ''}${w.hr_drift}`, '%']);
-  }
-
-  // Calories — all sports
-  if (w.calories != null) m.push(['Calories', w.calories, 'kcal']);
-
-  return m;
-}
-
-// Planned vs actual rows: [label, plannedStr, actualStr, cssClass]
-function buildPlannedVsActual(workout, session) {
-  if (!workout || !session?.targets) return [];
-  const t = session.targets;
-  const w = workout;
+  const sport = w?.sport ?? session?.sport;
   const rows = [];
 
-  if (w.sport === 'bike') {
-    rows.push(['Duration', `${session.duration_min}min`, fmtDuration(w.duration_min), '']);
-    if (t.tss_target != null && w.tss != null) {
-      const diff = Math.round(w.tss) - t.tss_target;
-      rows.push(['TSS', String(t.tss_target), String(Math.round(w.tss)), diff >= -5 ? 'val-good' : 'val-poor']);
+  const p  = (val, unit) => val != null ? `${val}${unit ? ' ' + unit : ''}` : '—';
+  const good = 'val-good', poor = 'val-poor', none = '';
+
+  // Duration
+  const plannedDur = session?.duration_min ? fmtDuration(session.duration_min) : '—';
+  const actualDur  = w?.duration_min != null ? fmtDuration(w.duration_min) : '—';
+  if (plannedDur !== '—' || actualDur !== '—') rows.push(['Duration', plannedDur, actualDur, none]);
+
+  if (sport === 'bike') {
+    // Distance
+    if (w?.distance_km != null) rows.push(['Distance', '—', `${w.distance_km.toFixed(1)} km`, none]);
+
+    // Avg Power / NP together
+    if (w?.avg_power != null || w?.normalized_power != null) {
+      const plannedPow = (t.power_min != null && t.power_max != null) ? `${t.power_min}–${t.power_max} W` : '—';
+      const actualPow = [
+        w?.avg_power != null ? `${w.avg_power}W avg` : null,
+        w?.normalized_power != null ? `${w.normalized_power}W NP` : null,
+      ].filter(Boolean).join(' / ');
+      const inZone = w?.normalized_power != null && t.power_min != null
+        ? (w.normalized_power >= t.power_min && w.normalized_power <= t.power_max + 10 ? good : poor)
+        : none;
+      rows.push(['Power', plannedPow, actualPow, inZone]);
     }
-    if (t.power_min != null && t.power_max != null && w.normalized_power != null) {
-      const inZone = w.normalized_power >= t.power_min && w.normalized_power <= t.power_max + 10;
-      rows.push(['NP', `${t.power_min}–${t.power_max}W`, `${w.normalized_power}W`, inZone ? 'val-good' : 'val-poor']);
+
+    // TSS
+    const plannedTSS = t.tss_target != null ? String(t.tss_target) : '—';
+    const actualTSS  = w?.tss != null ? String(Math.round(w.tss)) : '—';
+    if (plannedTSS !== '—' || actualTSS !== '—') {
+      const cls = (w?.tss != null && t.tss_target != null)
+        ? (Math.round(w.tss) >= t.tss_target - 5 ? good : poor) : none;
+      rows.push(['TSS', plannedTSS, actualTSS, cls]);
     }
-    if (t.vi_max != null && w.variability_index != null) {
-      const ok = w.variability_index <= t.vi_max;
-      rows.push(['VI', `≤${t.vi_max}`, String(w.variability_index), ok ? 'val-good' : 'val-poor']);
+
+    // IF
+    if (w?.intensity_factor != null) rows.push(['IF', '—', String(w.intensity_factor), none]);
+
+    // VI
+    if (w?.variability_index != null || t.vi_max != null) {
+      const plannedVI = t.vi_max != null ? `≤${t.vi_max}` : '—';
+      const actualVI  = w?.variability_index != null ? String(w.variability_index) : '—';
+      const cls = (w?.variability_index != null && t.vi_max != null)
+        ? (w.variability_index <= t.vi_max ? good : poor) : none;
+      rows.push(['VI', plannedVI, actualVI, cls]);
     }
-  } else if (w.sport === 'run') {
-    rows.push(['Duration', `${session.duration_min}min`, fmtDuration(w.duration_min), '']);
-    if (t.tss_target != null && w.tss != null) {
-      rows.push(['TSS', String(t.tss_target), String(Math.round(w.tss)), w.tss >= t.tss_target * 0.9 ? 'val-good' : 'val-poor']);
+
+  } else if (sport === 'run') {
+    if (w?.distance_km != null) rows.push(['Distance', '—', `${w.distance_km.toFixed(2)} km`, none]);
+    if (w?.avg_pace_sec != null) rows.push(['Pace', '—', `${formatPace(w.avg_pace_sec)} /km`, none]);
+    if (w?.tss != null || t.tss_target != null) {
+      const cls = (w?.tss != null && t.tss_target != null)
+        ? (w.tss >= t.tss_target * 0.9 ? good : poor) : none;
+      rows.push(['TSS', p(t.tss_target, ''), p(w?.tss != null ? Math.round(w.tss) : null, ''), cls]);
     }
-    if (w.avg_hr != null) rows.push(['Avg HR', '—', `${w.avg_hr}bpm`, '']);
-  } else if (w.sport === 'swim') {
-    rows.push(['Duration', `${session.duration_min}min`, fmtDuration(w.duration_min), '']);
-    if (t.total_distance_m != null && w.distance_km != null) {
-      const actual = Math.round(w.distance_km * 1000);
-      const ok = actual >= t.total_distance_m * 0.95;
-      rows.push(['Distance', `${t.total_distance_m}m`, `${actual}m`, ok ? 'val-good' : 'val-poor']);
+
+  } else if (sport === 'swim') {
+    const plannedDist = t.total_distance_m != null ? `${t.total_distance_m} m` : '—';
+    const actualDist  = w?.distance_km != null ? `${Math.round(w.distance_km * 1000)} m` : '—';
+    if (plannedDist !== '—' || actualDist !== '—') {
+      const cls = (w?.distance_km != null && t.total_distance_m != null)
+        ? (Math.round(w.distance_km * 1000) >= t.total_distance_m * 0.95 ? good : poor) : none;
+      rows.push(['Distance', plannedDist, actualDist, cls]);
     }
-    if (t.main_set?.css_target_sec_per_100m != null && w.avg_pace_sec != null) {
-      const target = t.main_set.css_target_sec_per_100m;
-      const ok = w.avg_pace_sec <= target * 1.05;
-      rows.push(['Pace /100m', fmtPace100m(target), fmtPace100m(w.avg_pace_sec), ok ? 'val-good' : 'val-poor']);
+    const cssSec = t.main_set?.css_target_sec_per_100m;
+    const plannedPace = cssSec != null ? fmtPace100m(cssSec) : '—';
+    const actualPace  = w?.avg_pace_sec != null ? fmtPace100m(w.avg_pace_sec) : '—';
+    if (plannedPace !== '—' || actualPace !== '—') {
+      const cls = (w?.avg_pace_sec != null && cssSec != null)
+        ? (w.avg_pace_sec <= cssSec * 1.05 ? good : poor) : none;
+      rows.push(['Pace /100m', plannedPace, actualPace, cls]);
     }
-    if (w.avg_hr != null) rows.push(['Avg HR', '—', `${w.avg_hr}bpm`, '']);
+    if (w?.tss != null) rows.push(['sTSS', '—', String(Math.round(w.tss)), none]);
   }
+
+  // HR — all endurance sports
+  if (sport !== 'strength') {
+    if (w?.min_hr != null || w?.avg_hr != null || w?.max_hr != null) {
+      const hrStr = [
+        w?.min_hr != null ? `${w.min_hr} min` : null,
+        w?.avg_hr != null ? `${w.avg_hr} avg` : null,
+        w?.max_hr != null ? `${w.max_hr} max` : null,
+      ].filter(Boolean).join(' / ');
+      rows.push(['HR (bpm)', '—', hrStr, none]);
+    }
+    if (w?.hr_drift != null) rows.push(['HR Drift', '—', `${w.hr_drift > 0 ? '+' : ''}${w.hr_drift}%`, none]);
+  }
+
+  // Calories
+  if (w?.calories != null) rows.push(['Calories', '—', `${w.calories} kcal`, none]);
+
   return rows;
 }
 

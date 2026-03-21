@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
     const coachingReport = await callAnthropic(
       anthropicKey,
       buildCoachingPrompt(workout, athlete, session, replyBody, complianceScore),
-      600
+      250
     );
 
     // Send final coaching report threaded as reply
@@ -142,7 +142,7 @@ async function sendViaAgentMail(
   inbox: string,
   { to, subject, text, replyToMessageId }: { to: string; subject: string; text: string; replyToMessageId?: string }
 ) {
-  const res = await fetch(`https://api.agentmail.to/v0/inboxes/${inbox}/messages`, {
+  const res = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inbox)}/messages/send`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -197,13 +197,13 @@ function buildCoachingPrompt(
     `Athlete feedback: ${feedback}`,
   ].filter(Boolean).join('\n');
 
-  return `You are a triathlon coach reviewing a completed workout. Write a 2–3 paragraph coaching report.
+  return `You are a triathlon coach. Write a short, direct coaching note — 4–6 sentences max, no headers, no fluff.
 
 ${athleteCtx}
 
 ${workoutCtx}
 
-Be specific about what the numbers mean, acknowledge what went well, and identify what to improve.${complianceScore != null && complianceScore < 70 ? ' End with one concrete plan adjustment suggestion phrased as a question for the athlete to confirm.' : ''}`;
+Lead with the key numbers and what they mean. Call out 1–2 high-impact actionables for next time. Be blunt.${complianceScore != null && complianceScore < 70 ? ' Include one concrete plan adjustment.' : ''}`;
 }
 
 function stripHtml(html: string): string {
