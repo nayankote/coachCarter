@@ -148,32 +148,36 @@
       background: rgba(0,0,0,0.07);
     }
 
-    /* ── Detail panel ── */
+    /* ── Center modal ── */
     .panel-overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.25);
+      background: rgba(0,0,0,0.35);
       z-index: 20;
       opacity: 0; pointer-events: none;
-      transition: opacity 0.2s;
+      transition: opacity 0.18s;
+      display: flex; align-items: center; justify-content: center;
     }
     .panel-overlay.open { opacity: 1; pointer-events: all; }
 
     .detail-panel {
-      position: fixed; top: 0; right: -420px; bottom: 0;
-      width: 400px; max-width: 100vw;
       background: #ffffff;
-      border-left: 1px solid #e8e6e0;
-      z-index: 21;
+      border-radius: 14px;
+      width: 520px; max-width: calc(100vw - 32px);
+      max-height: 82vh;
       overflow-y: auto;
-      transition: right 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      transform: scale(0.96) translateY(8px);
+      transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), opacity 0.18s;
+      opacity: 0;
     }
-    .detail-panel.open { right: 0; }
+    .panel-overlay.open .detail-panel { transform: scale(1) translateY(0); opacity: 1; }
 
     .panel-header {
       display: flex; align-items: flex-start; justify-content: space-between;
       padding: 20px 20px 16px;
       border-bottom: 1px solid #e8e6e0;
       position: sticky; top: 0; background: #ffffff; z-index: 1;
+      border-radius: 14px 14px 0 0;
     }
     .panel-sport-icon { font-size: 26px; margin-right: 12px; }
     .panel-title-block { flex: 1; }
@@ -185,18 +189,30 @@
     }
     .panel-close:hover { color: #1a1a1a; }
 
-    .panel-body { padding: 16px 20px; }
+    .panel-body { padding: 16px 20px 20px; }
     .panel-section { margin-bottom: 20px; }
     .panel-section-title {
       font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
       color: #aaa; font-weight: 600; margin-bottom: 10px;
     }
 
-    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .metric-box { background: #f7f6f3; border: 1px solid #e8e6e0; border-radius: 8px; padding: 10px 12px; }
-    .metric-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
-    .metric-value { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-top: 2px; }
-    .metric-unit { font-size: 11px; color: #888; font-weight: 400; }
+    /* Key stats row — 3-4 numbers, not a grid of boxes */
+    .stats-row { display: flex; gap: 0; border: 1px solid #e8e6e0; border-radius: 10px; overflow: hidden; }
+    .stat-cell { flex: 1; padding: 12px 14px; border-right: 1px solid #e8e6e0; }
+    .stat-cell:last-child { border-right: none; }
+    .stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 22px; font-weight: 800; color: #1a1a1a; line-height: 1.1; margin-top: 2px; }
+    .stat-unit  { font-size: 11px; color: #888; font-weight: 400; }
+
+    /* Planned vs actual comparison */
+    .pva-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .pva-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; font-weight: 600; padding: 0 0 6px; text-align: left; }
+    .pva-table th:not(:first-child) { text-align: right; }
+    .pva-table td { padding: 5px 0; border-top: 1px solid #f0ede8; color: #3a3a3a; }
+    .pva-table td:not(:first-child) { text-align: right; font-weight: 600; }
+    .pva-table td:first-child { color: #888; }
+    .val-good { color: #16a34a; }
+    .val-poor { color: #dc2626; }
 
     .compliance-bar-wrap { background: #f7f6f3; border: 1px solid #e8e6e0; border-radius: 8px; padding: 14px; }
     .compliance-score-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
@@ -259,20 +275,21 @@
     <div class="calendar" id="calendar"></div>
   </div>
 
-  <div class="panel-overlay" id="overlay"></div>
-  <aside class="detail-panel" id="detailPanel">
-    <div class="panel-header">
-      <div style="display:flex;align-items:center">
-        <span class="panel-sport-icon" id="panelIcon"></span>
-        <div class="panel-title-block">
-          <div class="panel-title" id="panelTitle"></div>
-          <div class="panel-subtitle" id="panelSubtitle"></div>
+  <div class="panel-overlay" id="overlay">
+    <aside class="detail-panel" id="detailPanel">
+      <div class="panel-header">
+        <div style="display:flex;align-items:center">
+          <span class="panel-sport-icon" id="panelIcon"></span>
+          <div class="panel-title-block">
+            <div class="panel-title" id="panelTitle"></div>
+            <div class="panel-subtitle" id="panelSubtitle"></div>
+          </div>
         </div>
+        <button class="panel-close" id="panelClose">&#x2715;</button>
       </div>
-      <button class="panel-close" id="panelClose">&#x2715;</button>
-    </div>
-    <div class="panel-body" id="panelBody"></div>
-  </aside>
+      <div class="panel-body" id="panelBody"></div>
+    </aside>
+  </div>
 
   <script>
 const SPORT_ICON = { bike: '🚴', run: '🏃', swim: '🏊', strength: '💪' };
@@ -361,10 +378,13 @@ function fmtDuration(min) {
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}` : `${m}min`;
 }
 
-function sessionTypeLabel(type) {
-  if (!type) return '';
-  // Convert snake_case / lowercase to Title Case
-  return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+function sessionTypeLabel(sport, type) {
+  const sportName = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : '';
+  if (!type || type === sport) return sportName;
+  const typePart = type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  // Avoid "Bike Bike" — only prepend sport if type doesn't already start with it
+  if (typePart.toLowerCase().startsWith(sport?.toLowerCase() ?? '')) return typePart;
+  return `${sportName} ${typePart}`;
 }
 
 // Returns [durationStr, secondaryMetricStr, badgeStr]
@@ -470,8 +490,8 @@ function renderCard(container, session, workout) {
   const sport = workout?.sport ?? session?.sport ?? 'bike';
   const icon  = SPORT_ICON[sport] ?? '🏋️';
   const cls   = cardClass(workout);
-  const typeLabel = session ? sessionTypeLabel(session.type ?? session.sport)
-                            : sessionTypeLabel(workout?.sport ?? '');
+  const typeLabel = session ? sessionTypeLabel(session.sport, session.type)
+                            : sessionTypeLabel(workout?.sport, null);
   const [dur, secondary, badge] = cardParts(workout, session ?? { sport, duration_min: workout?.duration_min, targets: {} });
 
   const card = document.createElement('div');
@@ -541,17 +561,30 @@ function buildPanelBody(session, workout) {
     parts.push(`<div style="margin-bottom:16px"><span class="status-badge ${badgeClass}">${badgeText}</span></div>`);
   }
 
-  const metrics = buildMetrics(workout, session);
-  if (metrics.length) {
+  const stats = buildStats(workout, session);
+  if (stats.length) {
     parts.push(`
       <div class="panel-section">
-        <div class="panel-section-title">Metrics</div>
-        <div class="metrics-grid">${metrics.map(([l, v, u]) => `
-          <div class="metric-box">
-            <div class="metric-label">${l}</div>
-            <div class="metric-value">${v}<span class="metric-unit">${u ? ' ' + u : ''}</span></div>
+        <div class="stats-row">${stats.map(([l, v, u]) => `
+          <div class="stat-cell">
+            <div class="stat-label">${l}</div>
+            <div class="stat-value">${v}<span class="stat-unit">${u ? ' ' + u : ''}</span></div>
           </div>`).join('')}
         </div>
+      </div>`);
+  }
+
+  const pva = buildPlannedVsActual(workout, session);
+  if (pva.length) {
+    parts.push(`
+      <div class="panel-section">
+        <div class="panel-section-title">Planned vs Actual</div>
+        <table class="pva-table">
+          <thead><tr><th></th><th>Planned</th><th>Actual</th></tr></thead>
+          <tbody>${pva.map(([label, planned, actual, cls]) =>
+            `<tr><td>${label}</td><td>${planned}</td><td class="${cls}">${actual}</td></tr>`
+          ).join('')}</tbody>
+        </table>
       </div>`);
   }
 
@@ -620,33 +653,63 @@ function buildPanelBody(session, workout) {
   return parts.join('');
 }
 
-function buildMetrics(workout, session) {
+// 3-4 key numbers shown as hero stats at top of panel
+function buildStats(workout, session) {
   if (!workout) {
     const m = [];
-    if (session?.duration_min)        m.push(['Duration',   session.duration_min, 'min']);
+    if (session?.duration_min)        m.push(['Duration', fmtDuration(session.duration_min), '']);
     if (session?.targets?.tss_target) m.push(['Target TSS', session.targets.tss_target, '']);
     return m;
   }
   const w = workout;
-  const m = [];
-  if (w.duration_min) m.push(['Duration', w.duration_min.toFixed(0), 'min']);
-  if (w.calories)     m.push(['Calories', w.calories, 'kcal']);
+  const m = [['Duration', fmtDuration(w.duration_min), '']];
   if (w.sport === 'bike') {
-    if (w.normalized_power)  m.push(['NP',  w.normalized_power,            'W']);
-    if (w.tss)               m.push(['TSS', Math.round(w.tss),             '']);
-    if (w.variability_index) m.push(['VI',  w.variability_index,           '']);
-    if (w.intensity_factor)  m.push(['IF',  w.intensity_factor,            '']);
+    if (w.normalized_power) m.push(['NP', w.normalized_power, 'W']);
+    if (w.tss)              m.push(['TSS', Math.round(w.tss), '']);
+    if (w.intensity_factor) m.push(['IF', w.intensity_factor, '']);
+  } else if (w.sport === 'run') {
+    if (w.avg_pace_sec) m.push(['Pace', formatPace(w.avg_pace_sec), '/km']);
+    if (w.avg_hr)       m.push(['HR', w.avg_hr, 'bpm']);
+  } else if (w.sport === 'swim') {
+    if (w.distance_km)  m.push(['Dist', (w.distance_km * 1000).toFixed(0), 'm']);
+    if (w.avg_pace_sec) m.push(['Pace', formatPace(w.avg_pace_sec), '/100m']);
+  } else if (w.sport === 'strength') {
+    if (w.calories) m.push(['Calories', w.calories, 'kcal']);
   }
-  if (w.sport === 'run') {
-    if (w.avg_pace_sec) m.push(['Avg pace', formatPace(w.avg_pace_sec), '']);
-    if (w.avg_hr)       m.push(['Avg HR',   w.avg_hr, 'bpm']);
-  }
-  if (w.sport === 'swim') {
-    if (w.distance_km)  m.push(['Distance', (w.distance_km * 1000).toFixed(0), 'm']);
-    if (w.avg_pace_sec) m.push(['Pace',     formatPace(w.avg_pace_sec),        '/100m']);
-  }
-  if (w.avg_hr && w.sport !== 'run') m.push(['Avg HR', w.avg_hr, 'bpm']);
   return m;
+}
+
+// Planned vs actual rows: [label, plannedStr, actualStr, cssClass]
+function buildPlannedVsActual(workout, session) {
+  if (!workout || !session?.targets) return [];
+  const t = session.targets;
+  const w = workout;
+  const rows = [];
+
+  if (w.sport === 'bike') {
+    rows.push(['Duration', `${session.duration_min}min`, fmtDuration(w.duration_min), '']);
+    if (t.tss_target && w.tss) {
+      const diff = Math.round(w.tss) - t.tss_target;
+      rows.push(['TSS', String(t.tss_target), String(Math.round(w.tss)), diff >= -5 ? 'val-good' : 'val-poor']);
+    }
+    if (t.power_min && t.power_max && w.normalized_power) {
+      const inZone = w.normalized_power >= t.power_min && w.normalized_power <= t.power_max + 10;
+      rows.push(['NP target', `${t.power_min}–${t.power_max}W`, `${w.normalized_power}W`, inZone ? 'val-good' : 'val-poor']);
+    }
+    if (t.vi_max && w.variability_index) {
+      const ok = w.variability_index <= t.vi_max;
+      rows.push(['VI', `≤${t.vi_max}`, String(w.variability_index), ok ? 'val-good' : 'val-poor']);
+    }
+  } else if (w.sport === 'run') {
+    rows.push(['Duration', `${session.duration_min}min`, fmtDuration(w.duration_min), '']);
+  } else if (w.sport === 'swim') {
+    if (t.total_distance_m && w.distance_km) {
+      const actual = (w.distance_km * 1000).toFixed(0);
+      const ok = Number(actual) >= t.total_distance_m * 0.95;
+      rows.push(['Distance', `${t.total_distance_m}m`, `${actual}m`, ok ? 'val-good' : 'val-poor']);
+    }
+  }
+  return rows;
 }
 
 function formatTargets(session) {
@@ -682,7 +745,7 @@ document.getElementById('prevWeek').addEventListener('click',  () => { currentMo
 document.getElementById('nextWeek').addEventListener('click',  () => { currentMonday = addDays(currentMonday,  7); render(); });
 document.getElementById('todayBtn').addEventListener('click',  () => { currentMonday = getMonday(new Date());       render(); });
 document.getElementById('panelClose').addEventListener('click', closePanel);
-document.getElementById('overlay').addEventListener('click',   closePanel);
+document.getElementById('overlay').addEventListener('click', e => { if (e.target === document.getElementById('overlay')) closePanel(); });
 
 async function init() {
   try {
