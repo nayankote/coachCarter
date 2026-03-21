@@ -196,26 +196,6 @@
       color: #aaa; font-weight: 600; margin-bottom: 10px;
     }
 
-    /* Key stats — fixed 3-column grid, every cell identical size */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      border: 1px solid #e8e6e0;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    .stat-cell {
-      padding: 12px 14px;
-      border-right: 1px solid #e8e6e0;
-      border-bottom: 1px solid #e8e6e0;
-    }
-    .stat-cell:nth-child(3n) { border-right: none; }
-    .stats-grid .stat-cell:nth-last-child(-n+3):nth-child(3n+1),
-    .stats-grid .stat-cell:nth-last-child(-n+3):nth-child(3n+2),
-    .stats-grid .stat-cell:nth-last-child(-n+3):nth-child(3n) { border-bottom: none; }
-    .stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-value { font-size: 20px; font-weight: 800; color: #1a1a1a; line-height: 1.1; margin-top: 2px; }
-    .stat-unit  { font-size: 11px; color: #888; font-weight: 400; }
 
     /* Planned vs actual comparison */
     .pva-table { width: 100%; border-collapse: collapse; font-size: 13px; }
