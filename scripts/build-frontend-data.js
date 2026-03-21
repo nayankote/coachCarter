@@ -6,25 +6,46 @@ const fs = require('fs');
 const path = require('path');
 const { getSupabase } = require('../lib/supabase');
 
+function decodeQuotedPrintable(str) {
+  return str
+    .replace(/=\r?\n/g, '')
+    .replace(/=([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+}
+
 function extractFeedbackText(raw) {
   if (!raw) return null;
-  // Old Gmail workouts: raw MIME email. Extract plain text body.
-  if (raw.startsWith('Delivered-To:') || raw.startsWith('Received:')) {
-    // Handle both \r\n and \n line endings — Supabase may normalize to \n
-    const sep = raw.includes('\r\n\r\n') ? '\r\n\r\n' : '\n\n';
-    const bodyStart = raw.indexOf(sep);
-    if (bodyStart === -1) return null;
-    const body = raw.slice(bodyStart + sep.length);
-    // Strip MIME boundary lines (--000...) and quoted reply (lines starting with >)
-    return body
-      .split(/\r?\n/)
-      .filter(l => !l.startsWith('--') && !l.startsWith('>') && !l.startsWith('On '))
-      .join('\n')
-      .trim()
-      .slice(0, 800);
-  }
-  // AgentMail workouts: already plain text
-  return raw.slice(0, 800);
+
+  const isMime = raw.startsWith('Delivered-To:') || raw.startsWith('Received:') || raw.startsWith('Content-Type:');
+  if (!isMime) return raw.slice(0, 800); // AgentMail plain text
+
+  // Locate the text/plain MIME part anywhere in the raw email
+  const plainTypeIdx = raw.search(/Content-Type:\s*text\/plain/i);
+  if (plainTypeIdx === -1) return null;
+
+  // Find the blank line that ends the part's headers
+  const eol = raw.includes('\r\n') ? '\r\n' : '\n';
+  const blankLine = eol + eol;
+  const partHeaderEnd = raw.indexOf(blankLine, plainTypeIdx);
+  if (partHeaderEnd === -1) return null;
+
+  // Detect QP from that part's headers only
+  const partHeaders = raw.slice(plainTypeIdx, partHeaderEnd);
+  const isQP = /Content-Transfer-Encoding:\s*quoted-printable/i.test(partHeaders);
+
+  let body = raw.slice(partHeaderEnd + blankLine.length);
+
+  // Stop at MIME boundary (--xxx) or next Content-Type header
+  const stopMatch = body.match(/--[^\s]{5}|[\r\n]Content-Type:/i);
+  if (stopMatch) body = body.slice(0, stopMatch.index);
+
+  if (isQP) body = decodeQuotedPrintable(body);
+
+  return body
+    .split(/\r?\n/)
+    .filter(l => !l.startsWith('>') && !l.startsWith('On '))
+    .join('\n')
+    .trim()
+    .slice(0, 800);
 }
 
 async function run() {
