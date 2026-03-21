@@ -23,7 +23,10 @@ async function run(workoutId) {
   const session = matchSession(plan, planWeek, workout.day_of_week, workout.sport);
   const planSessionId = session ? session.id : 'unplanned';
 
-  const metrics = await extractMetrics(fitData, workout.sport, plan.athlete);
+  // For multi_sport sub-sessions the synthetic ID encodes the leg index: parentId*10+index
+  // extractMetrics internally uses this only when the FIT file has multiple sessions
+  const sessionIndex = Number(workout.garmin_activity_id) % 10;
+  const metrics = await extractMetrics(fitData, workout.sport, plan.athlete, sessionIndex);
 
   // 3. Compliance score
   const { score, compliance_breakdown } = session
