@@ -60,8 +60,24 @@ async function processActivity(client, db, activity) {
     return await processMultiSport(db, activityId, activity.activityName, startTimeLocal, date, fitBuffer);
   }
 
+  // DB-level bike dedup: if a bike already exists on this date with similar duration, skip as duplicate
+  if (sport === 'bike') {
+    const { data: existing } = await db.from('workouts').select('id,duration_min').eq('date', date).eq('sport', 'bike');
+    if (existing?.length) {
+      const newDurationMin = activity.duration ? activity.duration / 60 : null;
+      const isDuplicate = existing.some(w => {
+        if (!w.duration_min || !newDurationMin) return false;
+        return Math.abs(w.duration_min - newDurationMin) / w.duration_min < 0.20;
+      });
+      if (isDuplicate) {
+        console.log(`[sync-garmin] Skipping duplicate bike on ${date} — similar duration already in DB`);
+        return [];
+      }
+    }
+  }
+
   const fitPath = `fit-files/${date}_${sport}_${activityId}.fit`;
-  const { error: uploadError } = await db.storage.from('fit-files').upload(fitPath, fitBuffer);
+  const { error: uploadError } = await db.storage.from('fit-files').upload(fitPath, fitBuffer, { upsert: true });
   if (uploadError) {
     console.error(`[sync-garmin] Upload failed for ${activityId}:`, uploadError.message);
     return [];
