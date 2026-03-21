@@ -10,32 +10,21 @@ function extractFeedbackText(raw) {
   if (!raw) return null;
   // Old Gmail workouts: raw MIME email. Extract plain text body.
   if (raw.startsWith('Delivered-To:') || raw.startsWith('Received:')) {
-    // Find first blank line (end of email headers)
-    const firstBlankLine = raw.indexOf('\r\n\r\n');
-    if (firstBlankLine === -1) return raw;
-    let body = raw.slice(firstBlankLine + 4);
-
-    // Look for text/plain part in multipart MIME
-    const textPlainMatch = body.match(/Content-Type: text\/plain[^\r\n]*\r\nContent-Transfer-Encoding[^\r\n]*\r\n\r\n([^\r\n][\s\S]*?)(?=\r\n--|$)/);
-    if (textPlainMatch && textPlainMatch[1]) {
-      body = textPlainMatch[1];
-    }
-
-    // Decode quoted-printable: =XX becomes character, = at end of line is ignored
-    body = body.replace(/=\r\n/g, '').replace(/=([0-9A-F]{2})/gi, (match, hex) => {
-      return String.fromCharCode(parseInt(hex, 16));
-    });
-
-    // Remove MIME boundary lines and quoted reply markers
+    // Handle both \r\n and \n line endings — Supabase may normalize to \n
+    const sep = raw.includes('\r\n\r\n') ? '\r\n\r\n' : '\n\n';
+    const bodyStart = raw.indexOf(sep);
+    if (bodyStart === -1) return null;
+    const body = raw.slice(bodyStart + sep.length);
+    // Strip MIME boundary lines (--000...) and quoted reply (lines starting with >)
     return body
-      .split('\n')
-      .filter(l => !l.startsWith('--') && !l.startsWith('>') && !l.startsWith('On ') && !l.startsWith('Content-'))
+      .split(/\r?\n/)
+      .filter(l => !l.startsWith('--') && !l.startsWith('>') && !l.startsWith('On '))
       .join('\n')
       .trim()
-      .slice(0, 800); // cap length for display
+      .slice(0, 800);
   }
   // AgentMail workouts: already plain text
-  return raw;
+  return raw.slice(0, 800);
 }
 
 async function run() {
