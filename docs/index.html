@@ -196,12 +196,25 @@
       color: #aaa; font-weight: 600; margin-bottom: 10px;
     }
 
-    /* Key stats row — flexible, wraps to second row if many cells */
-    .stats-row { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid #e8e6e0; border-radius: 10px; overflow: hidden; }
-    .stat-cell { flex: 1 1 auto; min-width: 90px; padding: 12px 14px; border-right: 1px solid #e8e6e0; border-bottom: 1px solid #e8e6e0; }
-    .stat-cell:last-child { border-right: none; }
-    .stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-    .stat-value { font-size: 20px; font-weight: 800; color: #1a1a1a; line-height: 1.1; margin-top: 2px; white-space: nowrap; }
+    /* Key stats — fixed 3-column grid, every cell identical size */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid #e8e6e0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .stat-cell {
+      padding: 12px 14px;
+      border-right: 1px solid #e8e6e0;
+      border-bottom: 1px solid #e8e6e0;
+    }
+    .stat-cell:nth-child(3n) { border-right: none; }
+    .stats-grid .stat-cell:nth-last-child(-n+3):nth-child(3n+1),
+    .stats-grid .stat-cell:nth-last-child(-n+3):nth-child(3n+2),
+    .stats-grid .stat-cell:nth-last-child(-n+3):nth-child(3n) { border-bottom: none; }
+    .stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 20px; font-weight: 800; color: #1a1a1a; line-height: 1.1; margin-top: 2px; }
     .stat-unit  { font-size: 11px; color: #888; font-weight: 400; }
 
     /* Planned vs actual comparison */
@@ -565,7 +578,7 @@ function buildPanelBody(session, workout) {
   if (stats.length) {
     parts.push(`
       <div class="panel-section">
-        <div class="stats-row">${stats.map(([l, v, u]) => `
+        <div class="stats-grid">${stats.map(([l, v, u]) => `
           <div class="stat-cell">
             <div class="stat-label">${l}</div>
             <div class="stat-value">${v}<span class="stat-unit">${u ? ' ' + u : ''}</span></div>
@@ -698,17 +711,13 @@ function buildStats(workout, session) {
     if (w.tss != null)          m.push(['sTSS', Math.round(w.tss), '']);
   }
 
-  // HR min/avg/max — all endurance sports
+  // HR min / avg / max as separate cells — all endurance sports
   if (w.sport !== 'strength') {
-    const hrParts = [];
-    if (w.min_hr != null) hrParts.push(`min ${w.min_hr}`);
-    if (w.avg_hr != null) hrParts.push(`avg ${w.avg_hr}`);
-    if (w.max_hr != null) hrParts.push(`max ${w.max_hr}`);
-    if (hrParts.length) m.push(['HR', hrParts.join(' / '), 'bpm']);
+    if (w.min_hr != null) m.push(['HR Min', w.min_hr, 'bpm']);
+    if (w.avg_hr != null) m.push(['HR Avg', w.avg_hr, 'bpm']);
+    if (w.max_hr != null) m.push(['HR Max', w.max_hr, 'bpm']);
+    if (w.hr_drift != null) m.push(['HR Drift', `${w.hr_drift > 0 ? '+' : ''}${w.hr_drift}`, '%']);
   }
-
-  // HR drift — endurance sports (if available)
-  if (w.sport !== 'strength' && w.hr_drift != null) m.push(['HR Drift', `${w.hr_drift > 0 ? '+' : ''}${w.hr_drift}`, '%']);
 
   // Calories — all sports
   if (w.calories != null) m.push(['Calories', w.calories, 'kcal']);
