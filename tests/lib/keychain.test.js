@@ -16,5 +16,5 @@ test('throws a clear error when secret not found', () => {
   execSync.mockImplementation(() => {
     throw new Error('SecKeychainSearchCopyNext: The specified item could not be found.');
   });
-  expect(() => getSecret('nonexistent')).toThrow('Keychain secret "nonexistent" not found');
+  expect(() => getSecret('nonexistent')).toThrow('Secret "nonexistent" not found');
 });
