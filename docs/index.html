@@ -8,8 +8,8 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: #0f0f1a;
-      color: #e2e8f0;
+      background: #f7f6f3;
+      color: #1a1a1a;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 14px;
       min-height: 100vh;
@@ -20,117 +20,119 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 20px;
-      background: #1a1a2e;
-      border-bottom: 1px solid #2d2d4e;
+      padding: 14px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #e8e6e0;
       position: sticky;
       top: 0;
       z-index: 10;
     }
-    .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; letter-spacing: -0.3px; }
-    .header-week { font-size: 15px; font-weight: 600; color: #e2e8f0; }
-    .header-nav { display: flex; gap: 8px; align-items: center; }
+    .header-title { font-size: 17px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.3px; }
+    .header-week { font-size: 14px; font-weight: 500; color: #5a5a5a; }
+    .header-nav { display: flex; gap: 6px; align-items: center; }
     .nav-btn {
-      background: #2d2d4e; border: none; color: #e2e8f0;
-      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
-      transition: background 0.15s;
+      background: #f0ede8; border: 1px solid #e0ddd8; color: #3a3a3a;
+      padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+      transition: background 0.12s;
     }
-    .nav-btn:hover { background: #3d3d5e; }
-    .nav-btn.today { color: #a78bfa; border: 1px solid #a78bfa; background: transparent; }
-    .nav-btn.today:hover { background: #a78bfa22; }
+    .nav-btn:hover { background: #e8e4de; }
+    .nav-btn.today { background: #1a1a1a; color: #ffffff; border-color: #1a1a1a; }
+    .nav-btn.today:hover { background: #333; }
 
     /* ── Weekly summary strip ── */
     .week-summary {
       display: flex;
-      gap: 12px;
-      padding: 10px 20px;
-      background: #1a1a2e;
-      border-bottom: 1px solid #2d2d4e;
+      gap: 10px;
+      padding: 10px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #e8e6e0;
       overflow-x: auto;
     }
     .summary-pill {
       display: flex; align-items: center; gap: 6px;
-      background: #252540; border-radius: 20px;
+      background: #f7f6f3; border: 1px solid #e8e6e0; border-radius: 20px;
       padding: 4px 12px; white-space: nowrap; font-size: 12px;
     }
-    .summary-pill .icon { font-size: 14px; }
-    .summary-pill .label { color: #94a3b8; }
-    .summary-pill .value { font-weight: 600; color: #e2e8f0; }
-    .summary-pill .planned { color: #64748b; margin-left: 2px; }
+    .summary-pill .icon { font-size: 13px; }
+    .summary-pill .label { color: #888; text-transform: capitalize; }
+    .summary-pill .value { font-weight: 600; color: #1a1a1a; }
+    .summary-pill .planned { color: #aaa; margin-left: 2px; }
 
     /* ── Calendar grid ── */
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 1px;
-      background: #2d2d4e;
-      margin: 0;
-      min-height: calc(100vh - 120px);
+      background: #e8e6e0;
+      min-height: calc(100vh - 116px);
     }
 
     .day-col {
-      background: #0f0f1a;
+      background: #f7f6f3;
       display: flex;
       flex-direction: column;
     }
-    .day-col.today { background: #13132a; }
-    .day-col.today .day-header { border-bottom-color: #a78bfa; }
+    .day-col.today { background: #ffffff; }
+    .day-col.today .day-header { border-bottom-color: #1a1a1a; }
 
     .day-header {
       padding: 10px 8px 8px;
-      border-bottom: 2px solid #2d2d4e;
+      border-bottom: 2px solid #e8e6e0;
       text-align: center;
+      background: inherit;
     }
-    .day-name { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; }
-    .day-date { font-size: 20px; font-weight: 700; color: #e2e8f0; line-height: 1.2; }
+    .day-name { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: 500; }
+    .day-date { font-size: 20px; font-weight: 700; color: #1a1a1a; line-height: 1.2; }
     .day-date.today-date {
-      background: #a78bfa;
-      color: #0f0f1a;
+      background: #1a1a1a;
+      color: #ffffff;
       border-radius: 50%;
       width: 32px; height: 32px;
       display: flex; align-items: center; justify-content: center;
       margin: 2px auto 0;
+      font-size: 16px;
     }
 
-    .day-sessions { padding: 8px 6px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .day-sessions { padding: 8px 6px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
 
     /* ── Workout cards ── */
     .workout-card {
-      border-radius: 8px;
+      border-radius: 7px;
       padding: 8px 10px;
       cursor: pointer;
-      transition: transform 0.1s, opacity 0.1s;
+      transition: box-shadow 0.12s, transform 0.1s;
       position: relative;
       overflow: hidden;
     }
-    .workout-card:hover { transform: translateY(-1px); opacity: 0.92; }
+    .workout-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
     .workout-card:active { transform: translateY(0); }
 
-    .card-planned      { background: transparent; border: 1.5px dashed #3d3d5e; color: #94a3b8; }
-    .card-complete-good { background: #14532d; border: 1px solid #22c55e; color: #bbf7d0; }
-    .card-complete-ok   { background: #451a03; border: 1px solid #f59e0b; color: #fde68a; }
-    .card-complete-poor { background: #450a0a; border: 1px solid #ef4444; color: #fecaca; }
-    .card-awaiting      { background: #431407; border: 1px solid #f97316; color: #fed7aa; }
-    .card-unplanned     { background: #1e293b; border: 1px solid #475569; color: #94a3b8; }
+    /* Light, clean status colours */
+    .card-planned      { background: #fff; border: 1.5px dashed #ccc; color: #888; }
+    .card-complete-good { background: #edfaf2; border: 1px solid #86efac; color: #166534; }
+    .card-complete-ok   { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+    .card-complete-poor { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+    .card-awaiting      { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; }
+    .card-unplanned     { background: #f9fafb; border: 1px solid #d1d5db; color: #6b7280; }
 
     @keyframes pulse-border {
-      0%, 100% { border-color: #f97316; }
-      50% { border-color: #fb923c88; }
+      0%, 100% { border-color: #fdba74; }
+      50%       { border-color: #fed7aa; }
     }
-    .card-awaiting { animation: pulse-border 2s infinite; }
+    .card-awaiting { animation: pulse-border 2.5s infinite; }
 
-    .card-sport { font-size: 16px; line-height: 1; }
-    .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-    .card-stat  { font-size: 12px; margin-top: 3px; }
+    .card-sport { font-size: 15px; line-height: 1; }
+    .card-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px; opacity: 0.75; }
+    .card-stat  { font-size: 12px; margin-top: 3px; font-weight: 500; }
     .card-score {
-      position: absolute; top: 6px; right: 8px;
-      font-size: 11px; font-weight: 700; opacity: 0.9;
+      position: absolute; top: 7px; right: 8px;
+      font-size: 11px; font-weight: 700; opacity: 0.8;
     }
 
     /* ── Detail panel ── */
     .panel-overlay {
       position: fixed; inset: 0;
-      background: #00000066;
+      background: rgba(0,0,0,0.25);
       z-index: 20;
       opacity: 0; pointer-events: none;
       transition: opacity 0.2s;
@@ -138,10 +140,10 @@
     .panel-overlay.open { opacity: 1; pointer-events: all; }
 
     .detail-panel {
-      position: fixed; top: 0; right: -400px; bottom: 0;
-      width: 380px; max-width: 100vw;
-      background: #1a1a2e;
-      border-left: 1px solid #2d2d4e;
+      position: fixed; top: 0; right: -420px; bottom: 0;
+      width: 400px; max-width: 100vw;
+      background: #ffffff;
+      border-left: 1px solid #e8e6e0;
       z-index: 21;
       overflow-y: auto;
       transition: right 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -151,65 +153,66 @@
     .panel-header {
       display: flex; align-items: flex-start; justify-content: space-between;
       padding: 20px 20px 16px;
-      border-bottom: 1px solid #2d2d4e;
-      position: sticky; top: 0; background: #1a1a2e; z-index: 1;
+      border-bottom: 1px solid #e8e6e0;
+      position: sticky; top: 0; background: #ffffff; z-index: 1;
     }
-    .panel-sport-icon { font-size: 28px; margin-right: 12px; }
+    .panel-sport-icon { font-size: 26px; margin-right: 12px; }
     .panel-title-block { flex: 1; }
-    .panel-title { font-size: 16px; font-weight: 700; color: #e2e8f0; }
-    .panel-subtitle { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .panel-title { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+    .panel-subtitle { font-size: 12px; color: #888; margin-top: 2px; }
     .panel-close {
-      background: none; border: none; color: #64748b; font-size: 20px;
+      background: none; border: none; color: #aaa; font-size: 18px;
       cursor: pointer; padding: 0 0 0 12px; line-height: 1;
     }
-    .panel-close:hover { color: #e2e8f0; }
+    .panel-close:hover { color: #1a1a1a; }
 
     .panel-body { padding: 16px 20px; }
     .panel-section { margin-bottom: 20px; }
     .panel-section-title {
       font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
-      color: #64748b; font-weight: 600; margin-bottom: 10px;
+      color: #aaa; font-weight: 600; margin-bottom: 10px;
     }
 
     .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .metric-box { background: #252540; border-radius: 8px; padding: 10px 12px; }
-    .metric-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-    .metric-value { font-size: 18px; font-weight: 700; color: #e2e8f0; margin-top: 2px; }
-    .metric-unit { font-size: 11px; color: #94a3b8; font-weight: 400; }
+    .metric-box { background: #f7f6f3; border: 1px solid #e8e6e0; border-radius: 8px; padding: 10px 12px; }
+    .metric-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-value { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-top: 2px; }
+    .metric-unit { font-size: 11px; color: #888; font-weight: 400; }
 
-    .compliance-bar-wrap { background: #252540; border-radius: 8px; padding: 12px; }
-    .compliance-score-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-    .compliance-score-num { font-size: 28px; font-weight: 800; }
-    .compliance-score-num.good { color: #22c55e; }
-    .compliance-score-num.ok   { color: #f59e0b; }
-    .compliance-score-num.poor { color: #ef4444; }
-    .compliance-label { font-size: 11px; color: #64748b; }
-    .compliance-bar-bg { background: #1a1a2e; border-radius: 4px; height: 6px; overflow: hidden; }
-    .compliance-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+    .compliance-bar-wrap { background: #f7f6f3; border: 1px solid #e8e6e0; border-radius: 8px; padding: 14px; }
+    .compliance-score-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .compliance-score-num { font-size: 32px; font-weight: 800; }
+    .compliance-score-num.good { color: #16a34a; }
+    .compliance-score-num.ok   { color: #d97706; }
+    .compliance-score-num.poor { color: #dc2626; }
+    .compliance-label { font-size: 11px; color: #aaa; }
+    .compliance-bar-bg { background: #e8e6e0; border-radius: 4px; height: 5px; overflow: hidden; }
+    .compliance-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
     .compliance-bar-fill.good { background: #22c55e; }
     .compliance-bar-fill.ok   { background: #f59e0b; }
     .compliance-bar-fill.poor { background: #ef4444; }
 
     .coaching-report {
-      background: #252540; border-radius: 8px; padding: 14px;
-      line-height: 1.6; color: #cbd5e1; font-size: 13px;
+      background: #f7f6f3; border: 1px solid #e8e6e0; border-radius: 8px; padding: 14px;
+      line-height: 1.65; color: #3a3a3a; font-size: 13px;
       white-space: pre-wrap;
     }
-    .coaching-report-empty { color: #475569; font-style: italic; font-size: 13px; }
+    .coaching-report-empty { color: #bbb; font-style: italic; font-size: 13px; }
 
     .feedback-box {
-      background: #252540; border-radius: 8px; padding: 14px;
-      font-size: 13px; color: #94a3b8; line-height: 1.5;
+      background: #f7f6f3; border: 1px solid #e8e6e0; border-radius: 8px; padding: 14px;
+      font-size: 13px; color: #666; line-height: 1.55;
       white-space: pre-wrap;
     }
 
     .status-badge {
       display: inline-flex; align-items: center; gap: 5px;
       padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      border: 1px solid transparent;
     }
-    .badge-complete  { background: #14532d; color: #22c55e; }
-    .badge-awaiting  { background: #431407; color: #f97316; }
-    .badge-unplanned { background: #1e293b; color: #94a3b8; }
+    .badge-complete  { background: #edfaf2; color: #166534; border-color: #86efac; }
+    .badge-awaiting  { background: #fff7ed; color: #9a3412; border-color: #fdba74; }
+    .badge-unplanned { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; }
 
     @media (max-width: 700px) {
       .calendar { grid-template-columns: 1fr; }
