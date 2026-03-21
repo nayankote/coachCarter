@@ -1,67 +1,61 @@
-jest.mock('nodemailer');
-jest.mock('imapflow');
-jest.mock('../../lib/keychain', () => ({ getSecret: jest.fn().mockReturnValue('app-password') }));
+// tests/lib/email.test.js
+jest.mock('../../lib/keychain', () => ({ getSecret: () => 'test-agentmail-key' }));
 
-process.env.COACHCARTER_EMAIL = 'coachcarter@gmail.com';
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
 
-const nodemailer = require('nodemailer');
-const { ImapFlow } = require('imapflow');
-
-const mockTransporter = { sendMail: jest.fn().mockResolvedValue({ messageId: '<abc@gmail.com>' }) };
-nodemailer.createTransport.mockReturnValue(mockTransporter);
-
-const { sendFeedbackEmail, pollReplies } = require('../../lib/email');
-
-test('sendFeedbackEmail uses Gmail SMTP with Keychain App Password', async () => {
-  await sendFeedbackEmail({ to: 'nayan@example.com', subject: 'Test', body: 'Hello' });
-  expect(nodemailer.createTransport).toHaveBeenCalledWith(expect.objectContaining({
-    host: 'smtp.gmail.com',
-    auth: expect.objectContaining({ user: 'coachcarter@gmail.com', pass: 'app-password' }),
-  }));
+beforeEach(() => {
+  jest.resetModules();
+  mockFetch.mockReset();
+  process.env.AGENTMAIL_INBOX = 'coachcarter';
 });
 
-test('sendFeedbackEmail returns the SMTP message_id', async () => {
-  const result = await sendFeedbackEmail({ to: 'nayan@example.com', subject: 'Test', body: 'Hello' });
-  expect(result.messageId).toBe('<abc@gmail.com>');
+test('sends email via AgentMail API', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ message_id: '<abc123@mail.agentmail.to>' }),
+  });
+
+  const { sendFeedbackEmail } = require('../../lib/email');
+  const result = await sendFeedbackEmail({
+    to: 'athlete@example.com',
+    subject: 'Test subject',
+    body: 'Test body',
+  });
+
+  expect(mockFetch).toHaveBeenCalledWith(
+    'https://api.agentmail.to/v0/inboxes/coachcarter/messages',
+    expect.objectContaining({
+      method: 'POST',
+      headers: expect.objectContaining({ Authorization: 'Bearer test-agentmail-key' }),
+    })
+  );
+  expect(result.messageId).toBe('<abc123@mail.agentmail.to>');
 });
 
-test('pollReplies connects via IMAP with CoachCarter credentials', async () => {
-  const mockClient = {
-    connect: jest.fn().mockResolvedValue(undefined),
-    mailboxOpen: jest.fn().mockResolvedValue(undefined),
-    search: jest.fn().mockResolvedValue([]),
-    logout: jest.fn().mockResolvedValue(undefined),
-  };
-  ImapFlow.mockImplementation(() => mockClient);
+test('includes reply_to_message_id when threading', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ message_id: '<reply@mail.agentmail.to>' }),
+  });
 
-  await pollReplies({ onReply: jest.fn() });
-  expect(ImapFlow).toHaveBeenCalledWith(expect.objectContaining({
-    host: 'imap.gmail.com',
-    auth: expect.objectContaining({ user: 'coachcarter@gmail.com', pass: 'app-password' }),
-  }));
-  expect(mockClient.connect).toHaveBeenCalled();
+  const { sendFeedbackEmail } = require('../../lib/email');
+  await sendFeedbackEmail({
+    to: 'athlete@example.com',
+    subject: 'Re: test',
+    body: 'Report body',
+    replyToMessageId: '<original@mail.agentmail.to>',
+  });
+
+  const sentBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+  expect(sentBody.reply_to_message_id).toBe('<original@mail.agentmail.to>');
 });
 
-test('pollReplies calls onReply with inReplyTo and body when messages found', async () => {
-  const mockClient = {
-    connect: jest.fn().mockResolvedValue(undefined),
-    mailboxOpen: jest.fn().mockResolvedValue(undefined),
-    search: jest.fn().mockResolvedValue([42]),
-    fetchOne: jest.fn().mockResolvedValue({
-      envelope: { messageId: '<reply@gmail.com>', inReplyTo: '<original@gmail.com>' },
-      source: Buffer.from('Great session, 8/10.'),
-    }),
-    messageFlagsAdd: jest.fn().mockResolvedValue(undefined),
-    logout: jest.fn().mockResolvedValue(undefined),
-  };
-  ImapFlow.mockImplementation(() => mockClient);
+test('throws on AgentMail API error', async () => {
+  mockFetch.mockResolvedValueOnce({ ok: false, status: 401, text: async () => 'Unauthorized' });
 
-  const onReply = jest.fn().mockResolvedValue(undefined);
-  await pollReplies({ onReply });
-
-  expect(onReply).toHaveBeenCalledWith(expect.objectContaining({
-    inReplyTo: '<original@gmail.com>',
-    body: expect.stringContaining('Great session'),
-  }));
-  expect(mockClient.messageFlagsAdd).toHaveBeenCalledWith(42, ['\\Seen']);
+  const { sendFeedbackEmail } = require('../../lib/email');
+  await expect(
+    sendFeedbackEmail({ to: 'x', subject: 'x', body: 'x' })
+  ).rejects.toThrow('AgentMail send failed (401)');
 });
