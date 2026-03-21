@@ -1,5 +1,5 @@
 // scripts/sync-garmin.js
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const { createGarminClient, getActivitiesSince, downloadFitFile, deduplicateBikes } = require('../lib/garmin');
 const { getSupabase } = require('../lib/supabase');
 const { run: analyzeWorkout } = require('./analyze-workout');
