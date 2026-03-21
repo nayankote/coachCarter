@@ -270,6 +270,7 @@ function getMonday(d) {
 function addDays(d, n) {
   const dt = new Date(d);
   dt.setDate(dt.getDate() + n);
+  dt.setHours(0, 0, 0, 0);
   return dt;
 }
 
@@ -522,7 +523,7 @@ function buildPanelBody(session, workout) {
             <span class="compliance-label">/ 100</span>
           </div>
           <div class="compliance-bar-bg">
-            <div class="compliance-bar-fill ${cls}" style="width:${s}%"></div>
+            <div class="compliance-bar-fill ${cls}" style="width:${Math.min(100, Math.max(0, Number(s) || 0))}%"></div>
           </div>
         </div>
       </div>`);
@@ -538,10 +539,11 @@ function buildPanelBody(session, workout) {
 
   if (workout?.coaching_report) {
     // esc() first to prevent XSS, then apply bold markdown transform on the escaped string
-    const report = esc(workout.coaching_report)
-      .replace(/^#+ .+?(&lt;br&gt;|<br>)/gm, '')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .trim();
+    const report = esc(
+      workout.coaching_report
+        .replace(/^#+ .+/gm, '')
+        .trim()
+    ).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     parts.push(`
       <div class="panel-section">
         <div class="panel-section-title">Coaching report</div>
@@ -639,12 +641,10 @@ document.getElementById('panelClose').addEventListener('click', closePanel);
 document.getElementById('overlay').addEventListener('click',   closePanel);
 
 async function init() {
-  // Single regex: handles trailing slash, index.html, and deep paths
-  const base = document.location.pathname.replace(/\/[^/]*$/, '');
   try {
     const [planRes, workoutsRes] = await Promise.all([
-      fetch(base + '/plan.json'),
-      fetch(base + '/workouts.json'),
+      fetch('plan.json'),
+      fetch('workouts.json'),
     ]);
     if (!planRes.ok)     throw new Error(`plan.json: ${planRes.status}`);
     if (!workoutsRes.ok) throw new Error(`workouts.json: ${workoutsRes.status}`);
@@ -653,7 +653,7 @@ async function init() {
     render();
   } catch (err) {
     document.getElementById('calendar').innerHTML =
-      `<div style="padding:40px;color:#ef4444;grid-column:1/-1">Failed to load data: ${err.message}</div>`;
+      `<div style="padding:40px;color:#ef4444;grid-column:1/-1">Failed to load data: ${esc(err.message)}</div>`;
   }
 }
 
