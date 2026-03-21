@@ -682,10 +682,14 @@ function buildStats(workout, session) {
   if (w.duration_min != null) m.push(['Duration', fmtDuration(w.duration_min), '']);
 
   if (w.sport === 'bike') {
+    if (w.distance_km != null)      m.push(['Distance', w.distance_km.toFixed(1), 'km']);
+    if (w.avg_power != null)        m.push(['Avg Power', w.avg_power, 'W']);
     if (w.normalized_power != null) m.push(['NP', w.normalized_power, 'W']);
     if (w.tss != null)              m.push(['TSS', Math.round(w.tss), '']);
     if (w.intensity_factor != null) m.push(['IF', w.intensity_factor, '']);
+    if (w.variability_index != null) m.push(['VI', w.variability_index, '']);
   } else if (w.sport === 'run') {
+    if (w.distance_km != null)  m.push(['Distance', w.distance_km.toFixed(2), 'km']);
     if (w.avg_pace_sec != null) m.push(['Pace', formatPace(w.avg_pace_sec), '/km']);
     if (w.tss != null)          m.push(['TSS', Math.round(w.tss), '']);
   } else if (w.sport === 'swim') {
@@ -694,13 +698,17 @@ function buildStats(workout, session) {
     if (w.tss != null)          m.push(['sTSS', Math.round(w.tss), '']);
   }
 
-  // HR — all endurance sports
+  // HR min/avg/max — all endurance sports
   if (w.sport !== 'strength') {
     const hrParts = [];
+    if (w.min_hr != null) hrParts.push(`min ${w.min_hr}`);
     if (w.avg_hr != null) hrParts.push(`avg ${w.avg_hr}`);
     if (w.max_hr != null) hrParts.push(`max ${w.max_hr}`);
     if (hrParts.length) m.push(['HR', hrParts.join(' / '), 'bpm']);
   }
+
+  // HR drift — endurance sports (if available)
+  if (w.sport !== 'strength' && w.hr_drift != null) m.push(['HR Drift', `${w.hr_drift > 0 ? '+' : ''}${w.hr_drift}`, '%']);
 
   // Calories — all sports
   if (w.calories != null) m.push(['Calories', w.calories, 'kcal']);
