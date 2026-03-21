@@ -353,7 +353,7 @@ function buildWorkoutMap(workouts) {
 function cardClass(workout, dateYmd) {
   if (!workout) {
     const today = toYMD(new Date());
-    return dateYmd > today ? 'card-planned-future' : 'card-planned-missed';
+    return dateYmd >= today ? 'card-planned-future' : 'card-planned-missed';
   }
   if (workout.status === 'awaiting_feedback' || workout.status === 'processing') return 'card-awaiting';
   if (workout.status === 'complete') {
