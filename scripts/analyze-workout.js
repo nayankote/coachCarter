@@ -36,6 +36,7 @@ async function run(workoutId) {
     plan_session_id: planSessionId,
     compliance_score: score,
     compliance_breakdown,
+    session_data: { session: session || null, athlete: plan.athlete },
     ...flattenMetrics(metrics),
   }).eq('id', workoutId);
 
