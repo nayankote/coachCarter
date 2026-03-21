@@ -59,18 +59,26 @@
     .summary-pill .planned { color: #aaa; margin-left: 2px; }
 
     /* ── Calendar grid ── */
+    .calendar-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px 20px 40px;
+    }
+
     .calendar {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 1px;
       background: #e8e6e0;
-      min-height: calc(100vh - 116px);
+      border-radius: 10px;
+      overflow: hidden;
     }
 
     .day-col {
       background: #f7f6f3;
       display: flex;
       flex-direction: column;
+      min-height: 200px;
     }
     .day-col.today { background: #ffffff; }
     .day-col.today .day-header { border-bottom-color: #1a1a1a; }
@@ -98,7 +106,7 @@
     /* ── Workout cards ── */
     .workout-card {
       border-radius: 7px;
-      padding: 8px 10px;
+      padding: 9px 10px 8px;
       cursor: pointer;
       transition: box-shadow 0.12s, transform 0.1s;
       position: relative;
@@ -121,12 +129,23 @@
     }
     .card-awaiting { animation: pulse-border 2.5s infinite; }
 
-    .card-sport { font-size: 15px; line-height: 1; }
-    .card-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px; opacity: 0.75; }
-    .card-stat  { font-size: 12px; margin-top: 3px; font-weight: 500; }
-    .card-score {
+    /* Card header row: sport icon + session type label */
+    .card-header { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+    .card-sport  { font-size: 13px; line-height: 1; }
+    .card-type   { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.65; }
+
+    /* Hero duration */
+    .card-duration { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+
+    /* Secondary metric row */
+    .card-metrics { font-size: 11px; font-weight: 500; margin-top: 3px; opacity: 0.8; }
+
+    /* Badge top-right */
+    .card-badge {
       position: absolute; top: 7px; right: 8px;
-      font-size: 11px; font-weight: 700; opacity: 0.8;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 6px; border-radius: 10px;
+      background: rgba(0,0,0,0.07);
     }
 
     /* ── Detail panel ── */
@@ -219,6 +238,7 @@
       .day-col:not(.today) { display: none; }
       .detail-panel { width: 100vw; }
       .week-summary { gap: 8px; }
+      .calendar-wrap { padding: 10px 10px 30px; }
     }
   </style>
 </head>
@@ -235,7 +255,9 @@
   </header>
 
   <div class="week-summary" id="weekSummary"></div>
-  <div class="calendar" id="calendar"></div>
+  <div class="calendar-wrap">
+    <div class="calendar" id="calendar"></div>
+  </div>
 
   <div class="panel-overlay" id="overlay"></div>
   <aside class="detail-panel" id="detailPanel">
@@ -330,40 +352,56 @@ function cardClass(workout) {
 
 function formatPace(sec) {
   const m = Math.floor(sec / 60), s = Math.round(sec % 60);
-  return `${m}:${String(s).padStart(2, '0')}/km`;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function cardStat(workout, session) {
+function fmtDuration(min) {
+  if (!min) return '—';
+  const h = Math.floor(min / 60), m = Math.round(min % 60);
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}` : `${m}min`;
+}
+
+function sessionTypeLabel(type) {
+  if (!type) return '';
+  // Convert snake_case / lowercase to Title Case
+  return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Returns [durationStr, secondaryMetricStr, badgeStr]
+function cardParts(workout, session) {
   if (!workout) {
-    if (session.sport === 'bike') return `${session.duration_min}min · ${session.targets?.tss_target ?? '—'}TSS`;
-    if (session.sport === 'run')  return `${session.duration_min}min`;
-    if (session.sport === 'swim') return `${session.targets?.total_distance_m ?? '—'}m`;
-    if (session.sport === 'strength') return `${session.duration_min}min · ${session.type}`;
-    return `${session.duration_min}min`;
+    // Planned, not yet done
+    const dur = fmtDuration(session?.duration_min);
+    let secondary = '';
+    if (session?.sport === 'bike' && session.targets?.tss_target) secondary = `${session.targets.tss_target} TSS`;
+    if (session?.sport === 'swim' && session.targets?.total_distance_m) secondary = `${session.targets.total_distance_m}m`;
+    return [dur, secondary, ''];
   }
   const w = workout;
+  const dur = fmtDuration(w.duration_min);
+  let secondary = '';
   if (w.sport === 'bike') {
-    let s = `${w.duration_min?.toFixed(0) ?? '—'}min`;
-    if (w.normalized_power) s += ` · ${w.normalized_power}W`;
-    if (w.tss) s += ` · ${Math.round(w.tss)}TSS`;
-    return s;
+    const parts = [];
+    if (w.normalized_power) parts.push(`${w.normalized_power}W`);
+    if (w.tss) parts.push(`${Math.round(w.tss)} TSS`);
+    secondary = parts.join(' · ');
+  } else if (w.sport === 'run') {
+    const parts = [];
+    if (w.avg_pace_sec) parts.push(`${formatPace(w.avg_pace_sec)}/km`);
+    if (w.avg_hr) parts.push(`${w.avg_hr}bpm`);
+    secondary = parts.join(' · ');
+  } else if (w.sport === 'swim') {
+    const parts = [];
+    if (w.distance_km) parts.push(`${(w.distance_km * 1000).toFixed(0)}m`);
+    if (w.avg_pace_sec) parts.push(`${formatPace(w.avg_pace_sec)}/100m`);
+    secondary = parts.join(' · ');
+  } else if (w.sport === 'strength') {
+    if (w.calories) secondary = `${w.calories} kcal`;
   }
-  if (w.sport === 'run') {
-    let s = `${w.duration_min?.toFixed(0) ?? '—'}min`;
-    if (w.avg_pace_sec) s += ` · ${formatPace(w.avg_pace_sec)}`;
-    return s;
-  }
-  if (w.sport === 'swim') {
-    let s = `${w.duration_min?.toFixed(0) ?? '—'}min`;
-    if (w.distance_km) s += ` · ${(w.distance_km * 1000).toFixed(0)}m`;
-    return s;
-  }
-  if (w.sport === 'strength') {
-    let s = `${w.duration_min?.toFixed(0) ?? '—'}min`;
-    if (w.calories) s += ` · ${w.calories}kcal`;
-    return s;
-  }
-  return `${w.duration_min?.toFixed(0) ?? '—'}min`;
+  const score = w.compliance_score;
+  const badge = score != null ? `${score}%`
+              : (w.status === 'awaiting_feedback' || w.status === 'processing') ? '⏳' : '';
+  return [dur, secondary, badge];
 }
 
 function render() {
@@ -432,17 +470,20 @@ function renderCard(container, session, workout) {
   const sport = workout?.sport ?? session?.sport ?? 'bike';
   const icon  = SPORT_ICON[sport] ?? '🏋️';
   const cls   = cardClass(workout);
-  const stat  = cardStat(workout, session ?? { sport, duration_min: workout?.duration_min, targets: {}, type: '' });
-  const score = workout?.compliance_score;
-  const label = session ? (session.type ?? session.sport) : (workout?.sport ?? '');
+  const typeLabel = session ? sessionTypeLabel(session.type ?? session.sport)
+                            : sessionTypeLabel(workout?.sport ?? '');
+  const [dur, secondary, badge] = cardParts(workout, session ?? { sport, duration_min: workout?.duration_min, targets: {} });
 
   const card = document.createElement('div');
   card.className = `workout-card ${cls}`;
   card.innerHTML = `
-    <div class="card-sport">${icon}</div>
-    <div class="card-title">${esc(label)}</div>
-    <div class="card-stat">${esc(stat)}</div>
-    ${score != null ? `<div class="card-score">${score}</div>` : ''}
+    ${badge ? `<div class="card-badge">${esc(badge)}</div>` : ''}
+    <div class="card-header">
+      <span class="card-sport">${icon}</span>
+      <span class="card-type">${esc(typeLabel)}</span>
+    </div>
+    <div class="card-duration">${esc(dur)}</div>
+    ${secondary ? `<div class="card-metrics">${esc(secondary)}</div>` : ''}
   `;
   card.addEventListener('click', () => openPanel(session, workout));
   container.appendChild(card);
