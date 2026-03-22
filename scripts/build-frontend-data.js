@@ -40,6 +40,10 @@ function extractFeedbackText(raw) {
 
   if (isQP) body = decodeQuotedPrintable(body);
 
+  // Strip email signature (standard "--" delimiter) and quoted thread
+  const sigMatch = body.match(/\r?\n--\s*\r?\n/);
+  if (sigMatch) body = body.slice(0, sigMatch.index);
+
   return body
     .split(/\r?\n/)
     .filter(l => !l.startsWith('>') && !l.startsWith('On '))

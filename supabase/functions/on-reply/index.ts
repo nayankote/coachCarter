@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
   const message   = payload.message ?? payload;
   const inReplyTo = message.in_reply_to ?? message.headers?.['In-Reply-To'];
   const references: string[] = message.references ?? [];
-  const replyBody = message.extracted_text ?? stripHtml(message.html ?? '');
+  const replyBody = cleanReplyText(message.extracted_text ?? stripHtml(message.html ?? ''));
 
   if (!replyBody) {
     console.log('[on-reply] Missing reply body — ignoring');
@@ -237,4 +237,18 @@ Lead with the key numbers and what they mean. Call out 1–2 high-impact actiona
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function cleanReplyText(text: string): string {
+  if (!text) return text;
+  // Strip email signature (standard "-- " delimiter)
+  const sigMatch = text.match(/\n--\s*\n/);
+  if (sigMatch) text = text.slice(0, sigMatch.index);
+  // Strip quoted thread lines
+  return text
+    .split('\n')
+    .filter(l => !l.startsWith('>') && !l.startsWith('On '))
+    .join('\n')
+    .trim()
+    .slice(0, 800);
 }
