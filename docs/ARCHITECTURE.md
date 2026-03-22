@@ -58,7 +58,7 @@ Garmin Connect
 - Loads all known `garmin_activity_id`s from Supabase into a Set
 - Fetches Garmin activities newest-first in pages of 10; stops when a full page is already known
 - **Multi-sport races** (e.g. 70.3 Ironman): single FIT file split into per-leg rows (swim, T1, bike, T2, run) using synthetic IDs (`parentId * 10 + sessionIndex`)
-- **Bike dedup**: if a bike already exists on the same date within ±20% duration, skips as duplicate (handles Zwift + watch recording the same ride)
+- **Bike dedup**: if a bike already exists on the same date whose time window overlaps the new activity, skips as duplicate (handles Zwift + watch recording the same ride simultaneously). Back-to-back rides on the same day are kept since their time windows don't overlap.
 - Calls `analyze-workout` immediately for each new activity
 - `retryStuck`: on each run, retries any rows stuck in `status: synced` for >10 min
 
