@@ -9,40 +9,70 @@ const supabase = createClient(
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
-  // Webhook signature verification
-  // IMPORTANT: verify exact header name + scheme against AgentMail docs at setup (Task 6 Step 4)
-  // If AgentMail uses HMAC-SHA256, simple === comparison will always fail — replace with
-  // a crypto.subtle HMAC verify. If it uses plain token comparison, === is correct.
+  // Read body once — needed for both signature verification and JSON parsing
+  const rawBody = await req.text();
+
   const webhookSecret = Deno.env.get('AGENTMAIL_WEBHOOK_SECRET');
   if (webhookSecret) {
-    const signature = req.headers.get('x-agentmail-signature') ?? req.headers.get('x-webhook-secret');
-    if (signature !== webhookSecret) {
-      console.error('[on-reply] Invalid webhook signature');
+    const svixId        = req.headers.get('svix-id');
+    const svixTimestamp = req.headers.get('svix-timestamp');
+    const svixSignature = req.headers.get('svix-signature');
+
+    if (!svixId || !svixTimestamp || !svixSignature) {
+      console.error('[on-reply] Missing Svix signature headers');
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    // Svix signs: "<svix-id>.<svix-timestamp>.<raw-body>"
+    const toSign = `${svixId}.${svixTimestamp}.${rawBody}`;
+
+    // Secret is base64-encoded after stripping optional "whsec_" prefix
+    const secretBase64 = webhookSecret.startsWith('whsec_')
+      ? webhookSecret.slice(6)
+      : webhookSecret;
+    const keyBytes = Uint8Array.from(atob(secretBase64), c => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(toSign));
+    const computed = 'v1,' + btoa(String.fromCharCode(...new Uint8Array(sig)));
+
+    // svix-signature may contain multiple space-separated sigs (e.g. "v1,abc v1,xyz")
+    const valid = svixSignature.split(' ').some(s => s === computed);
+    if (!valid) {
+      console.error('[on-reply] Invalid Svix signature');
       return new Response('Unauthorized', { status: 401 });
     }
   }
 
-  const payload = await req.json();
+  let payload: any;
+  try {
+    payload = JSON.parse(rawBody);
+  } catch {
+    return new Response('Bad request', { status: 400 });
+  }
 
-  // IMPORTANT: verify exact field names against AgentMail webhook docs at setup
-  // in_reply_to may be nested under payload.headers['in-reply-to'] instead
-  const inReplyTo = payload.in_reply_to ?? payload.headers?.['in-reply-to'];
-  const replyBody = payload.text ?? stripHtml(payload.html ?? '');
+  // AgentMail wraps the email under payload.message; in_reply_to may be a Gmail-assigned ID
+  // so we also check the references array which contains our original SES message ID
+  const message   = payload.message ?? payload;
+  const inReplyTo = message.in_reply_to ?? message.headers?.['In-Reply-To'];
+  const references: string[] = message.references ?? [];
+  const replyBody = message.extracted_text ?? stripHtml(message.html ?? '');
 
-  if (!inReplyTo || !replyBody) {
-    console.log('[on-reply] Missing in_reply_to or body — ignoring');
+  if (!replyBody) {
+    console.log('[on-reply] Missing reply body — ignoring');
     return new Response('OK', { status: 200 });
   }
 
-  // Find workout by the message ID of the original coaching email
-  const { data: workout } = await supabase
-    .from('workouts')
-    .select('*')
-    .eq('email_message_id', inReplyTo)
-    .single();
+  // Match workout by in_reply_to first, then fall back to references array.
+  // in_reply_to may be a Gmail-assigned ID; our SES message ID appears in references.
+  let workout: any = null;
+  const candidates = [inReplyTo, ...references].filter(Boolean);
+  for (const msgId of candidates) {
+    const { data } = await supabase.from('workouts').select('*').eq('email_message_id', msgId).single();
+    if (data) { workout = data; break; }
+  }
 
   if (!workout) {
-    console.log(`[on-reply] No workout found for in_reply_to=${inReplyTo}`);
+    console.log(`[on-reply] No workout found for any of: ${candidates.join(', ')}`);
     return new Response('OK', { status: 200 });
   }
 
@@ -61,25 +91,24 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')!;
-    const agentmailKey = Deno.env.get('AGENTMAIL_API_KEY')!;
+    const anthropicKey   = Deno.env.get('ANTHROPIC_API_KEY')!;
+    const agentmailKey   = Deno.env.get('AGENTMAIL_API_KEY')!;
     const agentmailInbox = Deno.env.get('AGENTMAIL_INBOX')!;
-    const athleteEmail = Deno.env.get('ATHLETE_EMAIL')!;
+    const athleteEmail   = Deno.env.get('ATHLETE_EMAIL')!;
 
-    // session_data was stored by analyze-workout — contains session targets + athlete profile
     const sessionData = workout.session_data ?? {};
-    const session = sessionData.session ?? null;
-    const athlete = sessionData.athlete ?? {};
+    const session     = sessionData.session ?? null;
+    const athlete     = sessionData.athlete ?? {};
 
-    let complianceScore = workout.compliance_score;
+    let complianceScore     = workout.compliance_score;
     let complianceBreakdown = workout.compliance_breakdown;
 
     // Strength: extract structured compliance from reply text
     if (workout.sport === 'strength' && session) {
       const prompt = buildStrengthPrompt(session, replyBody);
-      const raw = await callAnthropic(anthropicKey, prompt, 400);
+      const raw    = await callAnthropic(anthropicKey, prompt, 400);
       const parsed = JSON.parse(raw.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim());
-      complianceScore = parsed.compliance_score;
+      complianceScore     = parsed.compliance_score;
       complianceBreakdown = parsed;
     }
 
@@ -90,7 +119,7 @@ Deno.serve(async (req: Request) => {
       250
     );
 
-    // Send final coaching report threaded as reply
+    // Send coaching report as threaded reply
     await sendViaAgentMail(agentmailKey, agentmailInbox, {
       to: athleteEmail,
       subject: `[CoachCarter] ${workout.day_of_week} ${workout.sport} — coaching report`,
@@ -112,7 +141,7 @@ Deno.serve(async (req: Request) => {
 
   } catch (err) {
     console.error('[on-reply] Error:', err);
-    // Reset status so next AgentMail retry can proceed (step 2 guard checks for awaiting_feedback)
+    // Reset so next Svix retry can proceed
     await supabase.from('workouts').update({ status: 'awaiting_feedback' }).eq('id', workout.id);
     return new Response('Internal error', { status: 500 });
   }
@@ -189,7 +218,7 @@ function buildCoachingPrompt(
     `Session: ${session?.id || 'unplanned'} (${session?.type || 'n/a'})`,
     `Duration: ${workout.duration_min}min | Calories: ${workout.calories ?? '—'}`,
     workout.sport === 'bike' ? `NP: ${workout.normalized_power}W | VI: ${workout.variability_index} | TSS: ${workout.tss} | Intervals: ${workout.intervals_detected?.work_intervals}/${session?.targets?.main_set?.sets}` : '',
-    workout.sport === 'run' ? `Avg pace: ${workout.avg_pace_sec}s/km | Avg HR: ${workout.avg_hr}bpm` : '',
+    workout.sport === 'run'  ? `Avg pace: ${workout.avg_pace_sec}s/km | Avg HR: ${workout.avg_hr}bpm` : '',
     workout.sport === 'swim' ? `Distance: ${workout.total_distance_m}m | Main-set pace: ${workout.main_set_pace_sec}s/100m` : '',
     `Compliance: ${complianceScore ?? 'N/A'}`,
     `Targets: ${JSON.stringify(session?.targets ?? {})}`,
