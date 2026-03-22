@@ -191,7 +191,7 @@ Triggered by Supabase Edge Function when athlete replies:
 |---|---|
 | `workouts` | One row per activity (or per leg for multi-sport). Holds metrics, compliance, coaching report, feedback, status. |
 | `weekly_summaries` | One row per week. Holds compliance average, session counts, Claude summary. |
-| `sync_state` | Legacy — no longer used. Safe to drop. |
+| ~~`sync_state`~~ | Dropped — was legacy from old timestamp-based sync. |
 
 ### Workout Status Lifecycle
 
@@ -219,4 +219,4 @@ synced → analyzing → awaiting_feedback → complete
 | `sync_state` table | Unused legacy table. Safe to drop from Supabase. |
 | `scripts/update-plan.js` | Plan validator — run manually after editing `plan.json` to catch missing fields. Not wired into CI. |
 | `scripts/test-agentmail-e2e.js` | Test script only — not part of production flow. |
-| `pollReplies` in `lib/email.js` | Deprecated, kept to avoid import errors. Remove after confirming Edge Function handles all replies. |
+| ~~`pollReplies`~~ in `lib/email.js` | Removed — was deprecated stub from pre-webhook polling era. |
