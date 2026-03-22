@@ -3059,9 +3059,9 @@
     "power_distribution": null,
     "compliance_score": null,
     "compliance_breakdown": null,
-    "coaching_report": null,
-    "feedback": null,
-    "status": "awaiting_feedback",
+    "coaching_report": "Your aerobic base metrics are solid — FTP 190W, LTHR 165, run threshold 4:50/km, swim CSS 3:00/100m — but a 51-minute walk on a scheduled training day tells me recovery or motivation is off. If you're fatigued, that's data; log it and we adjust load. If you were just avoiding the session, that's a habit we need to kill now. Next Saturday, commit to the planned session before you leave the house — kit on, out the door, no negotiation. Track how your legs and sleep felt Friday night so we can tell the difference between smart recovery and drift.",
+    "feedback": "Walk walk",
+    "status": "complete",
     "start_time": "2026-03-21T11:58:28+00:00"
   }
 ]
