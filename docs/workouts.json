@@ -3092,9 +3092,9 @@
     "compliance_breakdown": {
       "hr_ok": false
     },
-    "coaching_report": null,
-    "feedback": null,
-    "status": "awaiting_feedback",
+    "coaching_report": "Your HR ran 5bpm over the Z2 ceiling and pace data didn't record, so we're working partially blind — but \"pushed the pace\" after a 70.3 block is exactly the pattern that quietly delays full recovery. The excitement is good; acting on it three weeks post-race is not. Next easy run, cap HR at 145bpm hard — if that means walk breaks, take them, no debate. I'm adjusting your next two Sunday runs to 30 minutes with a strict HR ceiling of 143bpm to rebuild the aerobic base without digging into the recovery you've nearly completed.",
+    "feedback": "Felt fantastic, finally got feeling back in my legs after the ironman 70.3\nin Feb. pushed the pace a bit as I was excited",
+    "status": "complete",
     "start_time": "2026-03-22T12:21:24+00:00"
   }
 ]
