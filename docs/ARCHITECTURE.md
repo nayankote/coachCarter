@@ -33,9 +33,12 @@ Garmin Connect
       │
       ▼ Athlete replies to email
       │
-      ▼ Supabase Edge Function  (AgentMail webhook)
-      │
-      ▼ scripts/finalize-coaching.js
+      ▼ AgentMail webhook → Supabase Edge Function (supabase/functions/on-reply/index.ts)
+      │  • JWT verification disabled (--no-verify-jwt) — AgentMail/Svix has no Supabase JWT
+      │  • Svix HMAC-SHA256 signature verified if AGENTMAIL_WEBHOOK_SECRET is set
+      │  • Message nested under payload.message; in_reply_to may be Gmail-assigned so
+      │    references[] array is also checked to find our original SES message ID
+      │  • Atomic status lock (awaiting_feedback → processing) prevents double-fire on retries
       │  • Strength: Claude extracts structured compliance from reply
       │  • All sports: Claude generates 4–6 sentence coaching report
       │  • Emails coaching report back to athlete (threaded)
@@ -229,3 +232,18 @@ synced → analyzing → awaiting_feedback → complete
 | `build-frontend.yml` | Push to `main` + every 30 min | Rebuilds `workouts.json` / `plan.json`, commits to repo |
 | `weekly-review.yml` | Sunday 14:30 UTC + manual | Generates and emails weekly coaching summary |
 | `sync-garmin.yml` | Manual (`workflow_dispatch`) only | Kept for emergency manual trigger; sync runs locally day-to-day |
+
+---
+
+## Edge Functions
+
+### `supabase/functions/on-reply/index.ts`
+
+Receives AgentMail reply webhooks via Svix. Key behaviours:
+
+- **JWT disabled**: deployed with `--no-verify-jwt` — must always use this flag, as each deploy resets JWT to enabled by default
+- **Signature verification**: if `AGENTMAIL_WEBHOOK_SECRET` is set, verifies Svix HMAC-SHA256 (`svix-id.svix-timestamp.body` signed with the `whsec_`-prefixed secret)
+- **Payload parsing**: AgentMail wraps the email under `payload.message`; reply text is in `extracted_text`
+- **Message ID matching**: `in_reply_to` may be a Gmail-assigned ID; falls back to checking `references[]` which contains our original SES `email_message_id`
+- **Idempotency**: atomic `awaiting_feedback → processing` status transition prevents double-processing on Svix retries
+- **Deploy command**: always `npx supabase functions deploy on-reply --no-verify-jwt`
