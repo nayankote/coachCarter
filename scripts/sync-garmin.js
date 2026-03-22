@@ -60,17 +60,22 @@ async function processActivity(client, db, activity) {
     return await processMultiSport(db, activityId, activity.activityName, startTimeLocal, date, fitBuffer);
   }
 
-  // DB-level bike dedup: if a bike already exists on this date with similar duration, skip as duplicate
+  // DB-level bike dedup: if a bike already exists on this date whose time window overlaps
+  // with the new activity, skip it as a duplicate (e.g. Zwift + watch recording the same ride).
+  // Back-to-back rides won't overlap even if close together, so they're kept.
   if (sport === 'bike') {
-    const { data: existing } = await db.from('workouts').select('id,duration_min').eq('date', date).eq('sport', 'bike');
+    const { data: existing } = await db.from('workouts').select('id,start_time,duration_min').eq('date', date).eq('sport', 'bike');
     if (existing?.length) {
-      const newDurationMin = activity.duration ? activity.duration / 60 : null;
+      const newStart = activity.startTimeLocal ? new Date(activity.startTimeLocal).getTime() : null;
+      const newEnd   = newStart && activity.duration ? newStart + activity.duration * 1000 : null;
       const isDuplicate = existing.some(w => {
-        if (!w.duration_min || !newDurationMin) return false;
-        return Math.abs(w.duration_min - newDurationMin) / w.duration_min < 0.20;
+        if (!newStart || !newEnd || !w.start_time || !w.duration_min) return false;
+        const exStart = new Date(w.start_time).getTime();
+        const exEnd   = exStart + w.duration_min * 60 * 1000;
+        return newStart < exEnd && newEnd > exStart; // intervals overlap
       });
       if (isDuplicate) {
-        console.log(`[sync-garmin] Skipping duplicate bike on ${date} — similar duration already in DB`);
+        console.log(`[sync-garmin] Skipping duplicate bike on ${date} — time window overlaps with existing ride`);
         return [];
       }
     }
