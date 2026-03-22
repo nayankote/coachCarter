@@ -216,7 +216,7 @@ synced → analyzing → awaiting_feedback → complete
 | Item | Notes |
 |---|---|
 | Garmin sync is manual | Cron removed (Garmin rate-limits datacenter IPs). Run locally as needed. |
-| `sync_state` table | Unused legacy table. Safe to drop from Supabase. |
+| ~~`sync_state` table~~ | Dropped — legacy from old timestamp-based sync. |
 | `scripts/update-plan.js` | Plan validator — run manually after editing `plan.json` to catch missing fields. Not wired into CI. |
 | `scripts/test-agentmail-e2e.js` | Test script only — not part of production flow. |
 | ~~`pollReplies`~~ in `lib/email.js` | Removed — was deprecated stub from pre-webhook polling era. |
