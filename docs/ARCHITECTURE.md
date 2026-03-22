@@ -111,6 +111,30 @@ Athlete context passed on every call: FTP, LTHR, run threshold pace, swim CSS.
 - Replies threaded via `reply_to_message_id`
 - AgentMail webhook triggers Supabase Edge Function on reply
 
+### Garmin Client — `lib/garmin.js`
+
+- `createGarminClient()`: authenticates with Garmin Connect via the unofficial SSO (`garmin-connect` npm package); 2s delay post-auth to avoid immediate rate limiting
+- `getNewActivities(client, knownIds)`: pages through Garmin activities newest-first (10 per page, 1s between pages); stops when a full page is all-known
+- `fetchWithRetry`: wraps `getActivities` with 3-attempt retry on 429 (10s / 20s backoff)
+- `downloadFitFile(client, activityId)`: downloads activity ZIP, extracts the `.fit` entry
+- `deduplicateBikes(activities)`: within a single sync batch, prefers Zwift (`virtual_ride` typeKey) over watch when both arrive in the same run; keeps all if source is ambiguous
+
+### Secrets — `lib/keychain.js`
+
+Unified secret resolution — checks env vars first (for CI), falls back to macOS Keychain (for local runs):
+
+| Keychain service | Env var fallback | Used by |
+|---|---|---|
+| `coachcarter-anthropic` | `ANTHROPIC_API_KEY` | `lib/coaching.js` |
+| `coachcarter-garmin` | `GARMIN_PASSWORD` | `lib/garmin.js` |
+| `coachcarter-agentmail` | `AGENTMAIL_API_KEY` | `lib/email.js` |
+| `coachcarter-supabase` | `SUPABASE_SERVICE_KEY` | `lib/supabase.js` |
+| `coachcarter-gmail` | `GMAIL_APP_PASSWORD` | (legacy, unused) |
+
+### Supabase Client — `lib/supabase.js`
+
+Singleton `createClient` wrapper. Reads `SUPABASE_URL` from env, service key via `lib/keychain.js`. All scripts call `getSupabase()` to get the shared client instance.
+
 ### Plan — `lib/plan.js`
 
 - Reads `plan.json` — 4-week rotating training block
@@ -193,6 +217,6 @@ synced → analyzing → awaiting_feedback → complete
 |---|---|
 | Garmin sync is manual | Cron removed (Garmin rate-limits datacenter IPs). Run locally as needed. |
 | `sync_state` table | Unused legacy table. Safe to drop from Supabase. |
-| `scripts/update-plan.js` | Exists but not wired into any automation. |
+| `scripts/update-plan.js` | Plan validator — run manually after editing `plan.json` to catch missing fields. Not wired into CI. |
 | `scripts/test-agentmail-e2e.js` | Test script only — not part of production flow. |
 | `pollReplies` in `lib/email.js` | Deprecated, kept to avoid import errors. Remove after confirming Edge Function handles all replies. |
