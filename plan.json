@@ -170,19 +170,19 @@
           "day": "Tuesday",
           "sport": "strength",
           "type": "A",
-          "duration_min": 55,
+          "duration_min": 52,
           "targets": {
             "exercises": [
-              { "name": "KB Swing", "sets": 4, "reps": 12 },
-              { "name": "Single-leg RDL", "sets": 3, "reps": 10, "per_side": true },
-              { "name": "Goblet Squat", "sets": 3, "reps": 12 },
-              { "name": "Suitcase Carry", "sets": 3, "reps": "25m", "per_side": true },
-              { "name": "KB Row", "sets": 3, "reps": 12, "per_side": true }
+              { "name": "KB Swing", "sets": 3, "reps": 12 },
+              { "name": "Single-leg RDL", "sets": 3, "reps": 8, "per_side": true },
+              { "name": "Goblet Squat", "sets": 3, "reps": 10 },
+              { "name": "Suitcase Carry", "sets": 3, "reps": "20m", "per_side": true },
+              { "name": "KB Row", "sets": 3, "reps": 10, "per_side": true }
             ],
             "mobility_min": 30,
             "mobility_focus": "Hip Complex"
           },
-          "coaching_notes": "Load increase week. Same exercises, more reps. Focus on quality over speed."
+          "coaching_notes": "Rest 60-90s between sets. Swing: drive hips, not a squat. Single-leg RDL: hinge until hamstring tension, control is everything. Goblet: heels down, chest up. Carry: ribs down, no lateral lean. Row: full scapular retraction at top."
         },
         {
           "id": "wed_swim",
@@ -204,19 +204,19 @@
           "day": "Thursday",
           "sport": "strength",
           "type": "B",
-          "duration_min": 52,
+          "duration_min": 48,
           "targets": {
             "exercises": [
               { "name": "Turkish Get-Up", "sets": 2, "reps": 3, "per_side": true },
-              { "name": "Bulgarian Split Squat", "sets": 3, "reps": 10, "per_side": true },
-              { "name": "KB Clean", "sets": 3, "reps": 6, "per_side": true },
-              { "name": "Dead Bug", "sets": 3, "reps": 10 },
-              { "name": "Renegade Row", "sets": 3, "reps": 6, "per_side": true }
+              { "name": "Bulgarian Split Squat", "sets": 3, "reps": 8, "per_side": true },
+              { "name": "KB Clean", "sets": 3, "reps": 5, "per_side": true },
+              { "name": "Dead Bug", "sets": 3, "reps": 8 },
+              { "name": "Renegade Row", "sets": 3, "reps": 5, "per_side": true }
             ],
             "mobility_min": 30,
             "mobility_focus": "T-spine"
           },
-          "coaching_notes": "Load increase. Same movement patterns, more reps. Keep form strict on TGU — slow is fast."
+          "coaching_notes": "TGU: slow and deliberate, 45-60s per rep. Split squat: front foot flat, torso upright. Clean: hip hike → elbow through → rack, not a bicep curl. Dead bug: low back flat to floor — non-negotiable. Renegade row: hips square, no rotation."
         },
         {
           "id": "sat_bike",
@@ -305,19 +305,19 @@
           "day": "Tuesday",
           "sport": "strength",
           "type": "A",
-          "duration_min": 60,
+          "duration_min": 52,
           "targets": {
             "exercises": [
-              { "name": "KB Swing", "sets": 4, "reps": 15 },
-              { "name": "Single-leg RDL", "sets": 4, "reps": 8, "per_side": true },
-              { "name": "Goblet Squat", "sets": 4, "reps": 10 },
-              { "name": "Suitcase Carry", "sets": 4, "reps": "25m", "per_side": true },
-              { "name": "KB Row", "sets": 4, "reps": 10, "per_side": true }
+              { "name": "KB Swing", "sets": 3, "reps": 12 },
+              { "name": "Single-leg RDL", "sets": 3, "reps": 8, "per_side": true },
+              { "name": "Goblet Squat", "sets": 3, "reps": 10 },
+              { "name": "Suitcase Carry", "sets": 3, "reps": "20m", "per_side": true },
+              { "name": "KB Row", "sets": 3, "reps": 10, "per_side": true }
             ],
             "mobility_min": 30,
             "mobility_focus": "Hip Complex"
           },
-          "coaching_notes": "Peak volume. 4 sets across the board. Maintain form — if it breaks, reduce reps not weight."
+          "coaching_notes": "Rest 60-90s between sets. Swing: drive hips, not a squat. Single-leg RDL: hinge until hamstring tension, control is everything. Goblet: heels down, chest up. Carry: ribs down, no lateral lean. Row: full scapular retraction at top."
         },
         {
           "id": "wed_swim",
@@ -339,19 +339,19 @@
           "day": "Thursday",
           "sport": "strength",
           "type": "B",
-          "duration_min": 58,
+          "duration_min": 48,
           "targets": {
             "exercises": [
-              { "name": "Turkish Get-Up", "sets": 3, "reps": 3, "per_side": true },
-              { "name": "Bulgarian Split Squat", "sets": 4, "reps": 8, "per_side": true },
-              { "name": "KB Clean", "sets": 4, "reps": 5, "per_side": true },
-              { "name": "Dead Bug", "sets": 4, "reps": 8 },
-              { "name": "Renegade Row", "sets": 4, "reps": 5, "per_side": true }
+              { "name": "Turkish Get-Up", "sets": 2, "reps": 3, "per_side": true },
+              { "name": "Bulgarian Split Squat", "sets": 3, "reps": 8, "per_side": true },
+              { "name": "KB Clean", "sets": 3, "reps": 5, "per_side": true },
+              { "name": "Dead Bug", "sets": 3, "reps": 8 },
+              { "name": "Renegade Row", "sets": 3, "reps": 5, "per_side": true }
             ],
             "mobility_min": 30,
             "mobility_focus": "T-spine"
           },
-          "coaching_notes": "Peak stability volume. TGU goes to 3 sets — still slow and deliberate. Everything 4 sets now. Don't rush."
+          "coaching_notes": "TGU: slow and deliberate, 45-60s per rep. Split squat: front foot flat, torso upright. Clean: hip hike → elbow through → rack, not a bicep curl. Dead bug: low back flat to floor — non-negotiable. Renegade row: hips square, no rotation."
         },
         {
           "id": "sat_bike",
@@ -440,19 +440,19 @@
           "day": "Tuesday",
           "sport": "strength",
           "type": "A",
-          "duration_min": 45,
+          "duration_min": 52,
           "targets": {
             "exercises": [
-              { "name": "KB Swing", "sets": 3, "reps": 10 },
-              { "name": "Single-leg RDL", "sets": 2, "reps": 8, "per_side": true },
-              { "name": "Goblet Squat", "sets": 2, "reps": 10 },
-              { "name": "Suitcase Carry", "sets": 2, "reps": "20m", "per_side": true },
-              { "name": "KB Row", "sets": 2, "reps": 10, "per_side": true }
+              { "name": "KB Swing", "sets": 3, "reps": 12 },
+              { "name": "Single-leg RDL", "sets": 3, "reps": 8, "per_side": true },
+              { "name": "Goblet Squat", "sets": 3, "reps": 10 },
+              { "name": "Suitcase Carry", "sets": 3, "reps": "20m", "per_side": true },
+              { "name": "KB Row", "sets": 3, "reps": 10, "per_side": true }
             ],
-            "mobility_min": 20,
+            "mobility_min": 30,
             "mobility_focus": "Hip Complex"
           },
-          "coaching_notes": "Volume drops ~35% but move well. Deload is not a holiday — it's active recovery with controlled movement."
+          "coaching_notes": "Rest 60-90s between sets. Swing: drive hips, not a squat. Single-leg RDL: hinge until hamstring tension, control is everything. Goblet: heels down, chest up. Carry: ribs down, no lateral lean. Row: full scapular retraction at top."
         },
         {
           "id": "wed_swim",
@@ -474,19 +474,19 @@
           "day": "Thursday",
           "sport": "strength",
           "type": "B",
-          "duration_min": 42,
+          "duration_min": 48,
           "targets": {
             "exercises": [
-              { "name": "Turkish Get-Up", "sets": 2, "reps": 2, "per_side": true },
-              { "name": "Bulgarian Split Squat", "sets": 2, "reps": 8, "per_side": true },
-              { "name": "KB Clean", "sets": 2, "reps": 5, "per_side": true },
-              { "name": "Dead Bug", "sets": 2, "reps": 8 },
-              { "name": "Renegade Row", "sets": 2, "reps": 5, "per_side": true }
+              { "name": "Turkish Get-Up", "sets": 2, "reps": 3, "per_side": true },
+              { "name": "Bulgarian Split Squat", "sets": 3, "reps": 8, "per_side": true },
+              { "name": "KB Clean", "sets": 3, "reps": 5, "per_side": true },
+              { "name": "Dead Bug", "sets": 3, "reps": 8 },
+              { "name": "Renegade Row", "sets": 3, "reps": 5, "per_side": true }
             ],
-            "mobility_min": 20,
+            "mobility_min": 30,
             "mobility_focus": "T-spine"
           },
-          "coaching_notes": "Deload. Move well, not hard. Mobility shortened to 20min but don't skip it."
+          "coaching_notes": "TGU: slow and deliberate, 45-60s per rep. Split squat: front foot flat, torso upright. Clean: hip hike → elbow through → rack, not a bicep curl. Dead bug: low back flat to floor — non-negotiable. Renegade row: hips square, no rotation."
         },
         {
           "id": "sat_bike",
