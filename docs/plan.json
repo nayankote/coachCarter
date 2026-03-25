@@ -54,15 +54,18 @@
           "day": "Wednesday",
           "sport": "swim",
           "type": "technique",
-          "duration_min": 55,
+          "duration_min": 50,
           "targets": {
-            "total_distance_m": 2200,
+            "total_distance_m": 1100,
+            "warm_up": "200m easy",
+            "drills": "4×50m (30s rest each): reps 1–2 catch-up drill (one arm fully extended before the other pulls), reps 3–4 fingertip drag (drag fingertips along water surface on recovery)",
             "main_set": {
-              "css_target_sec_per_100m": 180,
-              "description": "4×200m @CSS pace (3:00/100m), 30s rest between"
-            }
+              "css_target_sec_per_100m": null,
+              "description": "4×150m @CSS+15s (~3:15/100m), 30s rest between"
+            },
+            "cool_down": "150m easy"
           },
-          "coaching_notes": "Technique week. CSS pace should feel controlled — if you're gasping, you're too fast. Drills: focus on high elbow recovery and full extension per stroke."
+          "coaching_notes": "Technique week — no threshold work. Catch-up drill trains full extension and timing. Fingertip drag trains high elbow recovery. The 150s should feel controlled and relaxed, not like CSS efforts."
         },
         {
           "id": "thu_strength",
@@ -191,13 +194,16 @@
           "type": "intervals",
           "duration_min": 55,
           "targets": {
-            "total_distance_m": 2200,
+            "total_distance_m": 1500,
+            "warm_up": "200m easy",
+            "drills": "2×50m fingertip drag (30s rest each) — high elbow activation before the fast intervals",
             "main_set": {
               "css_target_sec_per_100m": 180,
-              "description": "8×100m @CSS (3:00/100m), 20s rest; then 4×50m sprint all-out, 45s rest"
-            }
+              "description": "8×100m @CSS (3:00/100m), 20s rest; then 4×50m all-out sprint, 45s rest"
+            },
+            "cool_down": "100m easy"
           },
-          "coaching_notes": "8×100m builds pace endurance. The 50m sprints are neuromuscular — go genuinely hard. Note split times on the 50s, you want sub-1:25/50m capability."
+          "coaching_notes": "Speed day. Fingertip drag in warm-up keeps your pull clean when going fast. 8×100m builds pace endurance at CSS. The 4×50m are neuromuscular — go genuinely all-out. Note your 50m split times; target sub-1:25."
         },
         {
           "id": "thu_strength",
@@ -326,13 +332,16 @@
           "type": "threshold",
           "duration_min": 55,
           "targets": {
-            "total_distance_m": 2200,
+            "total_distance_m": 1600,
+            "warm_up": "200m easy",
+            "drills": "2×50m catch-up drill (30s rest each) — reinforces full extension before long threshold intervals",
             "main_set": {
               "css_target_sec_per_100m": 180,
-              "description": "3×400m @CSS pace (3:00/100m), 45s rest; then 4×50m sub-CSS sprint, 30s rest"
-            }
+              "description": "3×400m @CSS (3:00/100m), 60s rest between"
+            },
+            "cool_down": "100m easy"
           },
-          "coaching_notes": "Longest continuous swim blocks. 400m at CSS is race-specific training for the 1.9km OW swim. 45s rest is tight — good. Sub-CSS 50s at the end teach your body to swim fast when tired."
+          "coaching_notes": "Threshold week. Catch-up drill in warm-up primes your stroke length before the long efforts. 400m at CSS is race-specific for the 1.9km OW swim. No sprints at the end — after three 400s, form degrades. 60s rest keeps it honest without forcing sloppy reps."
         },
         {
           "id": "thu_strength",
