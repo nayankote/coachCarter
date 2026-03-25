@@ -166,6 +166,12 @@
     .badge-ok   { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
     .badge-poor { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
+    .compliance-pill {
+      display: inline-flex; align-items: center;
+      padding: 4px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+    }
+
     /* ── Center modal ── */
     .panel-overlay {
       position: fixed; inset: 0;
@@ -605,7 +611,7 @@ function openPanel(session, workout) {
   const badgeEl = document.getElementById('panelComplianceBadge');
   if (s != null) {
     const cls = s >= 80 ? 'badge-good' : s >= 60 ? 'badge-ok' : 'badge-poor';
-    badgeEl.innerHTML = `<span class="compliance-badge ${cls}" style="position:static;width:28px;height:28px;font-size:10px">${s}</span>`;
+    badgeEl.innerHTML = `<span class="compliance-pill ${cls}">Compliance: ${s}/100</span>`;
   } else {
     badgeEl.innerHTML = '';
   }
