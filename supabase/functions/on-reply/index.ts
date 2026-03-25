@@ -124,7 +124,7 @@ Deno.serve(async (req: Request) => {
       to: athleteEmail,
       subject: `[CoachCarter] ${workout.day_of_week} ${workout.sport} — coaching report`,
       text: coachingReport,
-      replyToMessageId: inReplyTo,
+      replyToMessageId: locked.email_message_id ?? inReplyTo,
     });
 
     // Mark complete
