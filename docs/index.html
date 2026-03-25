@@ -800,7 +800,11 @@ function formatTargetsHtml(session) {
     if (t.cooldown)             lines.push(`<div><strong>Cooldown:</strong> ${esc(t.cooldown)}</div>`);
   }
   if (session.sport === 'swim') {
-    if (t.main_set?.description) lines.push(`<div>${esc(t.main_set.description)}</div>`);
+    if (t.total_distance_m)      lines.push(`<div><strong>Total:</strong> ${t.total_distance_m}m</div>`);
+    if (t.warm_up)               lines.push(`<div><strong>Warm-up:</strong> ${esc(t.warm_up)}</div>`);
+    if (t.drills)                lines.push(`<div><strong>Drills:</strong> ${esc(t.drills)}</div>`);
+    if (t.main_set?.description) lines.push(`<div><strong>Main:</strong> ${esc(t.main_set.description)}</div>`);
+    if (t.cool_down)             lines.push(`<div><strong>Cool-down:</strong> ${esc(t.cool_down)}</div>`);
   }
   if (session.sport === 'strength') {
     (t.exercises || []).forEach(e => {
@@ -824,7 +828,11 @@ function formatTargets(session) {
     if (t.cooldown)             lines.push(`Cooldown: ${t.cooldown}`);
   }
   if (session.sport === 'swim') {
-    if (t.main_set?.description) lines.push(t.main_set.description);
+    if (t.total_distance_m)      lines.push(`Total: ${t.total_distance_m}m`);
+    if (t.warm_up)               lines.push(`Warm-up: ${t.warm_up}`);
+    if (t.drills)                lines.push(`Drills: ${t.drills}`);
+    if (t.main_set?.description) lines.push(`Main: ${t.main_set.description}`);
+    if (t.cool_down)             lines.push(`Cool-down: ${t.cool_down}`);
   }
   if (session.sport === 'strength') {
     (t.exercises || []).forEach(e => {
