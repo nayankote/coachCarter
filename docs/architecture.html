@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CoachCarter — Architecture</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f3ef; color: #1a1a1a; padding: 32px; }
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #666; margin-bottom: 32px; }
+
+    .diagram { display: flex; flex-direction: column; gap: 32px; max-width: 960px; margin: 0 auto; }
+
+    /* Section labels */
+    .section-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+      color: #888; margin-bottom: 10px;
+    }
+
+    /* Flow rows */
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+    .flow-col { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+
+    /* Boxes */
+    .box {
+      border-radius: 8px; padding: 10px 14px; font-size: 13px; font-weight: 500;
+      text-align: center; min-width: 120px; line-height: 1.4;
+    }
+    .box-trigger  { background: #e8f4e8; border: 1.5px solid #5cb85c; color: #2d6a2d; }
+    .box-script   { background: #e8eef8; border: 1.5px solid #4a7fc1; color: #1e3a6e; }
+    .box-edge     { background: #f0e8f8; border: 1.5px solid #9b59b6; color: #4a1a6e; }
+    .box-service  { background: #fef9e7; border: 1.5px solid #d4ac0d; color: #6b5600; }
+    .box-db       { background: #fdf2f8; border: 1.5px solid #c0392b; color: #6b0000; }
+    .box-ai       { background: #fff3e6; border: 1.5px solid #e67e22; color: #7d3c00; }
+    .box-frontend { background: #eafaf1; border: 1.5px solid #1abc9c; color: #0e6655; }
+    .box-github   { background: #f0f0f0; border: 1.5px solid #555; color: #222; }
+    .box-sub      { font-size: 11px; color: #888; font-weight: 400; }
+
+    /* Arrows */
+    .arrow { font-size: 18px; color: #aaa; margin: 0 6px; line-height: 1; align-self: center; }
+    .arrow-down { font-size: 18px; color: #aaa; text-align: center; line-height: 1; }
+    .arrow-label { font-size: 10px; color: #999; text-align: center; margin-top: -4px; }
+
+    /* Lanes */
+    .lane {
+      background: white; border-radius: 12px; padding: 20px 24px;
+      border: 1px solid #e0ddd8;
+    }
+    .lane-title {
+      font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase;
+      letter-spacing: 0.6px; margin-bottom: 16px; border-bottom: 1px solid #f0ede8; padding-bottom: 8px;
+    }
+
+    /* Services legend */
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* Two column layout */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* Storage table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .data-table th { text-align: left; padding: 6px 10px; background: #f8f6f2; color: #555; font-weight: 600; border-bottom: 1px solid #e8e6e0; }
+    .data-table td { padding: 6px 10px; border-bottom: 1px solid #f0ede8; color: #333; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .tag-supabase { background: #fdf2f8; color: #c0392b; }
+    .tag-github   { background: #f0f0f0; color: #333; }
+    .tag-garmin   { background: #e8f4e8; color: #2d6a2d; }
+  </style>
+</head>
+<body>
+  <h1>CoachCarter — System Architecture</h1>
+  <p class="subtitle">As of March 2026 · Offseason base training block</p>
+
+  <div class="diagram">
+
+    <!-- FLOW 1: GARMIN SYNC -->
+    <div class="lane">
+      <div class="lane-title">Flow 1 — Garmin Sync (on-demand or GitHub Actions cron)</div>
+      <div class="flow" style="flex-wrap:wrap; gap:0; align-items:flex-start;">
+
+        <div class="flow-col">
+          <div class="box box-trigger">Trigger<div class="box-sub">Manual / cron</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-script">sync-garmin.js<div class="box-sub">Node.js script</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-service">Garmin Connect<div class="box-sub">Unofficial API</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-db">Supabase Storage<div class="box-sub">FIT files</div></div>
+          <div class="arrow-down">↓</div>
+          <div class="box box-db">workouts table<div class="box-sub">status: synced</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-script">analyze-workout.js<div class="box-sub">Node.js script</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-db">workouts table<div class="box-sub">metrics + compliance</div></div>
+          <div class="arrow-down">↓</div>
+          <div class="box box-service">AgentMail<div class="box-sub">Feedback request email</div></div>
+        </div>
+
+      </div>
+      <div style="margin-top:10px; font-size:11px; color:#999;">
+        FIT file parsing · dedup (Zwift+watch) · plan matching · compliance scoring · athlete email sent
+      </div>
+    </div>
+
+    <!-- FLOW 2: FEEDBACK LOOP -->
+    <div class="lane">
+      <div class="lane-title">Flow 2 — Athlete Reply → Coaching Report (live, automatic)</div>
+      <div class="flow" style="flex-wrap:wrap; gap:0; align-items:flex-start;">
+
+        <div class="flow-col">
+          <div class="box box-trigger">Athlete replies<div class="box-sub">to feedback email</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-service">AgentMail<div class="box-sub">Webhook (Svix)</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-edge">on-reply<div class="box-sub">Supabase Edge Fn</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-ai">Claude Sonnet 4.6<div class="box-sub">Coaching report</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-service">AgentMail<div class="box-sub">Reply in same thread</div></div>
+          <div class="arrow-down">↓</div>
+          <div class="box box-db">workouts table<div class="box-sub">status: complete</div></div>
+        </div>
+
+      </div>
+      <div style="margin-top:10px; font-size:11px; color:#999;">
+        Strength sessions: Claude extracts compliance from reply text · All sports: 600-token coaching note
+      </div>
+    </div>
+
+    <!-- FLOW 3: WEEKLY REVIEW -->
+    <div class="lane">
+      <div class="lane-title">Flow 3 — Weekly Review (Sunday 14:30 UTC, GitHub Actions)</div>
+      <div class="flow" style="flex-wrap:wrap; gap:0; align-items:flex-start;">
+
+        <div class="flow-col">
+          <div class="box box-github">GitHub Actions<div class="box-sub">Cron: Sunday 14:30</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-script">weekly-review.js<div class="box-sub">Node.js script</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-db">workouts +<div class="box-sub">weekly_summaries</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-ai">Claude Sonnet 4.6<div class="box-sub">Weekly summary</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-service">AgentMail<div class="box-sub">Weekly email</div></div>
+          <div class="arrow-down">↓</div>
+          <div class="box box-db">weekly_summaries<div class="box-sub">stored for trends</div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FLOW 4: DASHBOARD -->
+    <div class="lane">
+      <div class="lane-title">Flow 4 — Dashboard Build (every push + every 30 min)</div>
+      <div class="flow" style="flex-wrap:wrap; gap:0; align-items:flex-start;">
+
+        <div class="flow-col">
+          <div class="box box-github">GitHub Actions<div class="box-sub">push / cron 30min</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-script">build-frontend-data.js<div class="box-sub">Node.js script</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-db">workouts table<div class="box-sub">Supabase query</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-frontend">docs/workouts.json<div class="box-sub">+ docs/plan.json</div></div>
+        </div>
+        <div class="arrow">→</div>
+
+        <div class="flow-col">
+          <div class="box box-frontend">GitHub Pages<div class="box-sub">nayankote.com/coachCarter</div></div>
+        </div>
+
+      </div>
+      <div style="margin-top:10px; font-size:11px; color:#999;">
+        Static site — index.html reads local JSON files, no runtime backend
+      </div>
+    </div>
+
+    <!-- DATA + SERVICES -->
+    <div class="two-col">
+
+      <div class="lane">
+        <div class="lane-title">Data Storage</div>
+        <table class="data-table">
+          <tr><th>Table / Store</th><th>What's in it</th></tr>
+          <tr><td><span class="tag tag-supabase">Supabase DB</span> workouts</td><td>Every synced activity — metrics, compliance, feedback, coaching report, status</td></tr>
+          <tr><td><span class="tag tag-supabase">Supabase DB</span> weekly_summaries</td><td>Per-week rollup: compliance trend, session counts, summary text</td></tr>
+          <tr><td><span class="tag tag-supabase">Supabase Storage</span> fit-files</td><td>Raw FIT files from Garmin (never re-downloaded)</td></tr>
+          <tr><td><span class="tag tag-github">GitHub</span> plan.json</td><td>Training plan: 4-week block, session targets, athlete thresholds</td></tr>
+          <tr><td><span class="tag tag-github">GitHub</span> docs/</td><td>Static dashboard — index.html + generated JSON snapshots</td></tr>
+        </table>
+      </div>
+
+      <div class="lane">
+        <div class="lane-title">External Services</div>
+        <table class="data-table">
+          <tr><th>Service</th><th>Used for</th></tr>
+          <tr><td>🟠 Garmin Connect</td><td>Fetch activity list + download FIT files (unofficial API)</td></tr>
+          <tr><td>🔴 Supabase</td><td>Postgres DB + file storage + Edge Functions host</td></tr>
+          <tr><td>🟡 AgentMail</td><td>Send/receive athlete emails, webhook on reply (Svix)</td></tr>
+          <tr><td>🟣 Anthropic API</td><td>Claude Sonnet 4.6 — coaching reports, weekly summaries, strength scoring</td></tr>
+          <tr><td>⚫ GitHub Actions</td><td>Cron: Garmin sync, weekly review, dashboard rebuild</td></tr>
+          <tr><td>⚫ GitHub Pages</td><td>Host static dashboard at nayankote.com/coachCarter</td></tr>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- WORKOUT STATUS FSM -->
+    <div class="lane">
+      <div class="lane-title">Workout Status — State Machine</div>
+      <div class="flow" style="gap:0; justify-content:flex-start; flex-wrap:wrap;">
+        <div class="box box-github" style="min-width:90px;">synced</div>
+        <div class="arrow">→</div>
+        <div class="box box-script" style="min-width:90px;">analyzing</div>
+        <div class="arrow">→</div>
+        <div class="box box-service" style="min-width:130px;">awaiting_feedback</div>
+        <div class="arrow">→</div>
+        <div class="box box-edge" style="min-width:90px;">processing</div>
+        <div class="arrow">→</div>
+        <div class="box box-ai" style="min-width:90px;">complete</div>
+      </div>
+      <div style="margin-top:12px; font-size:11px; color:#999; line-height:1.7;">
+        <strong>synced</strong> — FIT uploaded, not yet analysed &nbsp;·&nbsp;
+        <strong>analyzing</strong> — extract metrics in progress &nbsp;·&nbsp;
+        <strong>awaiting_feedback</strong> — email sent, waiting for reply &nbsp;·&nbsp;
+        <strong>processing</strong> — on-reply webhook received, generating report &nbsp;·&nbsp;
+        <strong>complete</strong> — coaching report sent and stored<br>
+        Stuck recovery: sync-garmin retries <em>synced</em> + <em>analyzing</em> after 10 min · Manual rescue: <code>finalize-coaching.js</code>
+      </div>
+    </div>
+
+    <!-- CREDENTIALS -->
+    <div class="lane">
+      <div class="lane-title">Secrets &amp; Credentials</div>
+      <table class="data-table">
+        <tr><th>Secret</th><th>Local (macOS Keychain)</th><th>CI (GitHub Secrets)</th><th>Edge Fn (Supabase Env)</th></tr>
+        <tr><td>Supabase URL + key</td><td>.env + coachcarter-supabase</td><td>SUPABASE_URL / SERVICE_KEY</td><td>SUPABASE_URL / SERVICE_ROLE_KEY</td></tr>
+        <tr><td>Garmin password</td><td>coachcarter-garmin</td><td>GARMIN_PASSWORD</td><td>—</td></tr>
+        <tr><td>AgentMail API key</td><td>coachcarter-agentmail</td><td>AGENTMAIL_API_KEY</td><td>AGENTMAIL_API_KEY</td></tr>
+        <tr><td>Anthropic API key</td><td>coachcarter-anthropic</td><td>ANTHROPIC_API_KEY</td><td>ANTHROPIC_API_KEY</td></tr>
+        <tr><td>AgentMail webhook secret</td><td>—</td><td>—</td><td>AGENTMAIL_WEBHOOK_SECRET</td></tr>
+      </table>
+    </div>
+
+  </div>
+</body>
+</html>
