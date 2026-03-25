@@ -536,14 +536,14 @@ function render() {
 
 function cardTicks(workout) {
   if (!workout) return '';
+  if (workout.status === 'complete') return '<span class="card-ticks tick-received">✓✓</span>';
   if (workout.status === 'awaiting_feedback' || workout.status === 'processing') return '<span class="card-ticks tick-sent">✓</span>';
   return '';
 }
 
 function complianceBadge(workout) {
-  if (!workout || workout.status !== 'complete') return '';
+  if (!workout || workout.status !== 'complete' || workout.compliance_score == null) return '';
   const s = workout.compliance_score;
-  if (s == null) return '<span class="card-ticks tick-received">✓✓</span>';
   const cls = s >= 80 ? 'badge-good' : s >= 60 ? 'badge-ok' : 'badge-poor';
   return `<span class="compliance-badge ${cls}">${s}</span>`;
 }
