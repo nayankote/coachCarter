@@ -154,6 +154,18 @@
     .tick-sent     { color: #9ca3af; } /* grey  — awaiting feedback */
     .tick-received { color: #3b82f6; } /* blue  — feedback received */
 
+    /* Compliance score circle — top right of completed cards */
+    .compliance-badge {
+      position: absolute; top: 6px; right: 7px;
+      width: 22px; height: 22px; border-radius: 50%;
+      font-size: 8px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .badge-good { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .badge-ok   { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+    .badge-poor { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
     /* ── Center modal ── */
     .panel-overlay {
       position: fixed; inset: 0;
@@ -350,18 +362,17 @@ function buildWorkoutMap(workouts) {
   return map;
 }
 
-function cardClass(workout, dateYmd) {
+function cardClass(workout, dateYmd, session) {
   if (!workout) {
     const today = toYMD(new Date());
     return dateYmd >= today ? 'card-planned-future' : 'card-planned-missed';
   }
   if (workout.status === 'awaiting_feedback' || workout.status === 'processing') return 'card-awaiting';
   if (workout.status === 'complete') {
-    const s = workout.compliance_score;
-    if (s == null) return 'card-complete-good';
-    if (s >= 80) return 'card-complete-good';
-    if (s >= 60) return 'card-complete-ok';
-    return 'card-complete-poor';
+    const planned = session?.duration_min;
+    const actual  = workout.duration_min;
+    if (planned && actual && actual < planned * 0.85) return 'card-complete-ok';
+    return 'card-complete-good';
   }
   return 'card-unplanned';
 }
@@ -525,15 +536,22 @@ function render() {
 
 function cardTicks(workout) {
   if (!workout) return '';
-  if (workout.status === 'complete') return '<span class="card-ticks tick-received">✓✓</span>';
   if (workout.status === 'awaiting_feedback' || workout.status === 'processing') return '<span class="card-ticks tick-sent">✓</span>';
   return '';
+}
+
+function complianceBadge(workout) {
+  if (!workout || workout.status !== 'complete') return '';
+  const s = workout.compliance_score;
+  if (s == null) return '<span class="card-ticks tick-received">✓✓</span>';
+  const cls = s >= 80 ? 'badge-good' : s >= 60 ? 'badge-ok' : 'badge-poor';
+  return `<span class="compliance-badge ${cls}">${s}</span>`;
 }
 
 function renderCard(container, session, workout, dateYmd) {
   const sport = workout?.sport ?? session?.sport ?? 'bike';
   const icon  = sportIcon(sport);
-  const cls   = cardClass(workout, dateYmd);
+  const cls   = cardClass(workout, dateYmd, session);
   const typeLabel = session ? sessionTypeLabel(session.sport, session.type, null)
                             : sessionTypeLabel(workout?.sport, null, workout?.activity_name);
   const [dur, secondary] = cardParts(workout, session ?? { sport, duration_min: workout?.duration_min, targets: {} });
@@ -542,6 +560,7 @@ function renderCard(container, session, workout, dateYmd) {
   card.className = `workout-card ${cls}`;
   card.innerHTML = `
     ${cardTicks(workout)}
+    ${complianceBadge(workout)}
     <div class="card-header">
       <span class="card-sport">${icon}</span>
       <span class="card-type">${esc(typeLabel)}</span>
