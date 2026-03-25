@@ -17,9 +17,9 @@
 
     /* ── Header ── */
     .header {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
       padding: 14px 24px;
       background: #ffffff;
       border-bottom: 1px solid #e8e6e0;
@@ -27,9 +27,18 @@
       top: 0;
       z-index: 10;
     }
-    .header-title { font-size: 17px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.3px; }
+    .header-title { font-size: 17px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.3px; text-align: center; }
     .header-week { font-size: 14px; font-weight: 500; color: #5a5a5a; }
-    .header-nav { display: flex; gap: 6px; align-items: center; }
+    .header-nav { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+    .back-home {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 500; color: #5a5a5a;
+      text-decoration: none;
+      background: #f0ede8; border: 1px solid #e0ddd8;
+      padding: 5px 10px; border-radius: 6px;
+      transition: background 0.12s;
+    }
+    .back-home:hover { background: #e8e4de; color: #1a1a1a; }
     .nav-btn {
       background: #f0ede8; border: 1px solid #e0ddd8; color: #3a3a3a;
       padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
@@ -276,6 +285,7 @@
 <body>
 
   <header class="header">
+    <div><a href="https://nayankote.github.io" class="back-home">← Back Home</a></div>
     <div class="header-title">CoachCarter</div>
     <div class="header-nav">
       <button class="nav-btn today" id="todayBtn">Today</button>
