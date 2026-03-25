@@ -605,7 +605,7 @@ function openPanel(session, workout) {
   const badgeEl = document.getElementById('panelComplianceBadge');
   if (s != null) {
     const cls = s >= 80 ? 'badge-good' : s >= 60 ? 'badge-ok' : 'badge-poor';
-    badgeEl.innerHTML = `<span class="compliance-badge ${cls}" style="width:28px;height:28px;font-size:10px">${s}</span>`;
+    badgeEl.innerHTML = `<span class="compliance-badge ${cls}" style="position:static;width:28px;height:28px;font-size:10px">${s}</span>`;
   } else {
     badgeEl.innerHTML = '';
   }
@@ -649,10 +649,12 @@ function buildPanelBody(session, workout) {
 
   // 3. Your feedback
   if (workout?.feedback) {
+    // Normalize email soft-wraps: single \n → space, double \n → paragraph break
+    const feedbackHtml = esc(workout.feedback.replace(/\n{2,}/g, '\x00').replace(/\n/g, ' ').replace(/\x00/g, '\n\n'));
     parts.push(`
       <div class="panel-section">
         <div class="panel-section-title">Your feedback</div>
-        <div class="feedback-box">${esc(workout.feedback)}</div>
+        <div class="feedback-box">${feedbackHtml}</div>
       </div>`);
   }
 
@@ -800,7 +802,10 @@ function formatTargetsHtml(session) {
     });
     if (t.mobility_min) lines.push(`<div>Mobility: ${t.mobility_min}min ${esc(t.mobility_focus || '')}</div>`);
   }
-  if (session.coaching_notes) lines.push(`<div style="margin-top:10px;color:#888">${esc(session.coaching_notes)}</div>`);
+  if (session.coaching_notes) {
+    const mt = lines.length ? 'margin-top:10px;' : '';
+    lines.push(`<div style="${mt}color:#888">${esc(session.coaching_notes)}</div>`);
+  }
   return lines.join('');
 }
 
