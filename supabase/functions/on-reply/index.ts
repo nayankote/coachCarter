@@ -52,8 +52,9 @@ Deno.serve(async (req: Request) => {
 
   // AgentMail wraps the email under payload.message; in_reply_to may be a Gmail-assigned ID
   // so we also check the references array which contains our original SES message ID
-  const message   = payload.message ?? payload;
-  const inReplyTo = message.in_reply_to ?? message.headers?.['In-Reply-To'];
+  const message            = payload.message ?? payload;
+  const incomingMessageId  = message.id;  // AgentMail internal UUID of the athlete's reply — use for reply_to_message_id
+  const inReplyTo          = message.in_reply_to ?? message.headers?.['In-Reply-To'];
   const references: string[] = message.references ?? [];
   const replyBody = cleanReplyText(message.extracted_text ?? stripHtml(message.html ?? ''));
 
@@ -119,12 +120,13 @@ Deno.serve(async (req: Request) => {
       250
     );
 
-    // Send coaching report as threaded reply
+    // Send coaching report as threaded reply — use the incoming AgentMail message ID
+    // (the athlete's feedback email) so the reply lands in the same thread
     await sendViaAgentMail(agentmailKey, agentmailInbox, {
       to: athleteEmail,
       subject: `[CoachCarter] ${workout.day_of_week} ${workout.sport} — coaching report`,
       text: coachingReport,
-      replyToMessageId: locked.email_message_id ?? inReplyTo,
+      replyToMessageId: incomingMessageId ?? locked.email_message_id ?? inReplyTo,
     });
 
     // Mark complete
