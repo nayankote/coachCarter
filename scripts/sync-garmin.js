@@ -160,7 +160,9 @@ async function processMultiSport(db, activityId, activityName, startTimeLocal, d
 
 async function retryStuck(db) {
   const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-  const { data: stuck } = await db.from('workouts').select('id').eq('status', 'synced').lt('created_at', cutoff);
+  // Retry both 'synced' (never started) and 'analyzing' (started but crashed mid-flight)
+  const { data: stuck } = await db.from('workouts').select('id')
+    .in('status', ['synced', 'analyzing']).lt('created_at', cutoff);
   if (!stuck?.length) return;
   console.log(`[sync-garmin] Retrying ${stuck.length} stuck rows`);
   for (const { id } of stuck) {

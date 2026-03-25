@@ -1,4 +1,8 @@
 // scripts/finalize-coaching.js
+// MANUAL RESCUE TOOL — run this when the on-reply webhook failed and a workout is stuck
+// in 'processing' or 'awaiting_feedback' with feedback already stored.
+// The live automatic path is the on-reply Supabase Edge Function.
+// KEEP COACHING PROMPT IN SYNC WITH: supabase/functions/on-reply/index.ts
 require('dotenv').config();
 const { getSupabase } = require('../lib/supabase');
 const { loadPlan, matchSession } = require('../lib/plan');
@@ -35,12 +39,15 @@ async function run(workoutId) {
     plan,
   });
 
-  // Send final coaching report to athlete (fixes gap: previously only stored, never emailed)
+  // Send coaching report. Threading note: finalize-coaching is a manual rescue tool and
+  // doesn't have the incoming AgentMail message ID. We use email_message_id (the original
+  // feedback request) as best-effort — it may land in a new thread if Gmail rethreads.
+  // The live path (on-reply edge function) uses the incoming message ID for correct threading.
   await sendFeedbackEmail({
     to: process.env.ATHLETE_EMAIL,
     subject: `[CoachCarter] ${workout.day_of_week} ${workout.sport} — coaching report`,
     body: coachingReport,
-    replyToMessageId: workout.email_message_id,
+    replyToMessageId: workout.email_message_id ?? null,
   });
 
   await db.from('workouts').update({

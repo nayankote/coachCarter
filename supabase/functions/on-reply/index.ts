@@ -117,7 +117,7 @@ Deno.serve(async (req: Request) => {
     const coachingReport = await callAnthropic(
       anthropicKey,
       buildCoachingPrompt(workout, athlete, session, replyBody, complianceScore),
-      250
+      600
     );
 
     // Send coaching report as threaded reply — use the incoming AgentMail message ID
@@ -221,7 +221,7 @@ function buildCoachingPrompt(
     `Duration: ${workout.duration_min}min | Calories: ${workout.calories ?? '—'}`,
     workout.sport === 'bike' ? `NP: ${workout.normalized_power}W | VI: ${workout.variability_index} | TSS: ${workout.tss} | Intervals: ${workout.intervals_detected?.work_intervals}/${session?.targets?.main_set?.sets}` : '',
     workout.sport === 'run'  ? `Avg pace: ${workout.avg_pace_sec}s/km | Avg HR: ${workout.avg_hr}bpm` : '',
-    workout.sport === 'swim' ? `Distance: ${workout.total_distance_m}m | Main-set pace: ${workout.main_set_pace_sec}s/100m` : '',
+    workout.sport === 'swim' ? `Distance: ${workout.distance_km ? Math.round(workout.distance_km * 1000) : '—'}m | Avg pace: ${workout.avg_pace_sec ?? '—'}s/100m` : '',
     `Compliance: ${complianceScore ?? 'N/A'}`,
     `Targets: ${JSON.stringify(session?.targets ?? {})}`,
     `Coaching notes: ${session?.coaching_notes ?? 'none'}`,
