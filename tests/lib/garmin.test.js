@@ -43,8 +43,8 @@ test('deduplicateBikes prefers Zwift when both sources present on same day', () 
     { activityId: 11, sport: 'bike', date: '2026-03-18', activityType: { typeKey: 'cycling' } },
     { activityId: 12, sport: 'run',  date: '2026-03-18', activityType: { typeKey: 'running' } },
   ];
-  const result = deduplicateBikes(activities);
-  expect(result.map(a => a.activityId)).toEqual([10, 12]);
+  const { keep } = deduplicateBikes(activities);
+  expect(keep.map(a => a.activityId)).toEqual([10, 12]);
 });
 
 test('deduplicateBikes keeps all activities when source cannot be determined', () => {
@@ -52,6 +52,6 @@ test('deduplicateBikes keeps all activities when source cannot be determined', (
     { activityId: 20, sport: 'bike', date: '2026-03-18', activityType: { typeKey: 'cycling' } },
     { activityId: 21, sport: 'bike', date: '2026-03-18', activityType: { typeKey: 'cycling' } },
   ];
-  const result = deduplicateBikes(activities);
-  expect(result).toHaveLength(2);
+  const { keep } = deduplicateBikes(activities);
+  expect(keep).toHaveLength(2);
 });
