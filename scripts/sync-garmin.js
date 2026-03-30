@@ -20,7 +20,7 @@ async function run() {
   console.log(`[sync-garmin] ${existing?.length ?? 0} activities already in DB`);
 
   const client = await createGarminClient();
-  let activities = await getNewActivities(client, knownIds);
+  const activities = await getNewActivities(client, knownIds);
   const { keep, duplicates } = deduplicateBikes(activities);
 
   for (const activity of duplicates) {
