@@ -21,11 +21,16 @@ async function run() {
 
   const client = await createGarminClient();
   let activities = await getNewActivities(client, knownIds);
-  activities = deduplicateBikes(activities);
-  console.log(`[sync-garmin] ${activities.length} new activities to sync`);
+  const { keep, duplicates } = deduplicateBikes(activities);
+
+  for (const activity of duplicates) {
+    await insertDuplicate(client, db, activity);
+  }
+
+  console.log(`[sync-garmin] ${keep.length} new activities to sync`);
 
   let newCount = 0;
-  for (const activity of activities) {
+  for (const activity of keep) {
     const workoutIds = await processActivity(client, db, activity);
     for (const workoutId of workoutIds) {
       newCount++;
