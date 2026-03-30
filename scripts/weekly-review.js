@@ -21,6 +21,7 @@ async function run() {
   const planWeek = calcPlanWeek(plan.plan_start_date, weekStart);
 
   const { data: workouts } = await db.from('workouts').select('*')
+    .neq('status', 'duplicate')
     .gte('date', weekStart).lte('date', weekEnd);
 
   const weekPlan = plan.weeks.find(w => w.week === planWeek);
