@@ -57,6 +57,7 @@ async function run() {
   const { data: workouts, error } = await db
     .from('workouts')
     .select('id,garmin_activity_id,activity_name,sport,date,day_of_week,plan_week,plan_session_id,duration_min,calories,avg_hr,min_hr,max_hr,avg_power,tss,normalized_power,variability_index,intensity_factor,hr_drift,avg_pace_sec,distance_km,intervals_detected,power_distribution,compliance_score,compliance_breakdown,coaching_report,feedback,status,start_time')
+    .neq('status', 'duplicate')
     .order('date', { ascending: true });
 
   if (error) throw new Error(`Supabase fetch failed: ${error.message}`);
