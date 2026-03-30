@@ -53,7 +53,8 @@ test('passes plan.athlete to extractMetrics', async () => {
   expect(extractMetrics).toHaveBeenCalledWith(
     expect.anything(),
     'bike',
-    { ftp: 190 }
+    { ftp: 190 },
+    expect.any(Number)
   );
 });
 

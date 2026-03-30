@@ -11,40 +11,35 @@ const mockDb = {
   from: jest.fn(),
   select: jest.fn(),
   eq: jest.fn(),
-  single: jest.fn(),
-  insert: jest.fn(),
-  update: jest.fn(),
+  neq: jest.fn(),
+  in: jest.fn(),
+  order: jest.fn(),
   lt: jest.fn(),
+  update: jest.fn(),
+  insert: jest.fn(),
   storage: { from: jest.fn() },
 };
 
-['from','select','eq','lt','update'].forEach(m => mockDb[m].mockReturnValue(mockDb));
-mockDb.single.mockResolvedValue({ data: { last_synced_at: new Date().toISOString() }, error: null });
+['from','select','eq','neq','in','order','lt','update'].forEach(m => mockDb[m].mockReturnValue(mockDb));
 mockDb.insert.mockReturnValue(mockInsertChain);
 mockDb.storage.from.mockReturnValue({ upload: jest.fn().mockResolvedValue({ error: null }) });
 
 beforeEach(() => {
   getSupabase.mockReturnValue(mockDb);
   garmin.createGarminClient.mockResolvedValue({});
-  garmin.getActivitiesSince.mockResolvedValue([]);
-  garmin.deduplicateBikes.mockImplementation(a => a);
+  garmin.getNewActivities.mockResolvedValue([]);
+  garmin.deduplicateBikes.mockImplementation(a => ({ keep: a, duplicates: [] }));
   garmin.downloadFitFile = jest.fn().mockResolvedValue(Buffer.from('fit'));
 });
 
-test('reads last_synced_at from sync_state before fetching', async () => {
+test('reads known activity IDs from workouts table before fetching', async () => {
   const { run } = require('../../scripts/sync-garmin');
   await run();
-  expect(mockDb.from).toHaveBeenCalledWith('sync_state');
-});
-
-test('updates last_synced_at after sync completes', async () => {
-  const { run } = require('../../scripts/sync-garmin');
-  await run();
-  expect(mockDb.update).toHaveBeenCalled();
+  expect(mockDb.from).toHaveBeenCalledWith('workouts');
 });
 
 test('calls analyzeWorkout inline for each new activity', async () => {
-  garmin.getActivitiesSince.mockResolvedValue([
+  garmin.getNewActivities.mockResolvedValue([
     { activityId: 123, activityType: { typeKey: 'cycling' }, startTimeLocal: '2026-03-18 08:00:00' },
   ]);
   const { run } = require('../../scripts/sync-garmin');

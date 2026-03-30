@@ -24,7 +24,7 @@ test('sends email via AgentMail API', async () => {
   });
 
   expect(mockFetch).toHaveBeenCalledWith(
-    'https://api.agentmail.to/v0/inboxes/coachcarter/messages',
+    'https://api.agentmail.to/v0/inboxes/coachcarter/messages/send',
     expect.objectContaining({
       method: 'POST',
       headers: expect.objectContaining({ Authorization: 'Bearer test-agentmail-key' }),

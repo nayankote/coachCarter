@@ -9,7 +9,7 @@ jest.mock('../../lib/keychain', () => ({ getSecret: jest.fn().mockReturnValue('g
 
 process.env.GARMIN_EMAIL = 'test@example.com';
 
-const { createGarminClient, getActivitiesSince, resolveSource, deduplicateBikes } =
+const { createGarminClient, getNewActivities, resolveSource, deduplicateBikes } =
   require('../../lib/garmin');
 
 test('createGarminClient logs in with email + Keychain password', async () => {
@@ -17,16 +17,14 @@ test('createGarminClient logs in with email + Keychain password', async () => {
   expect(client.login).toHaveBeenCalledWith('test@example.com', 'garmin-pass');
 });
 
-test('getActivitiesSince filters activities after the given date', async () => {
-  const since = new Date('2026-03-18T00:00:00Z');
-  const activities = [
-    { activityId: 1, startTimeGMT: '2026-03-19 08:00:00' },
-    { activityId: 2, startTimeGMT: '2026-03-17 08:00:00' },
-  ];
-  const client = { getActivities: jest.fn().mockResolvedValue(activities) };
-  const result = await getActivitiesSince(client, since);
-  expect(result).toHaveLength(1);
-  expect(result[0].activityId).toBe(1);
+test('getNewActivities returns activities not already in knownIds', async () => {
+  const client = {
+    getActivities: jest.fn()
+      .mockResolvedValueOnce([{ activityId: 1 }, { activityId: 2 }])
+      .mockResolvedValueOnce([]),
+  };
+  const result = await getNewActivities(client, new Set(['2']));
+  expect(result).toEqual([{ activityId: 1 }]);
 });
 
 test('resolveSource returns "zwift" for virtual_ride activities', () => {

@@ -64,6 +64,6 @@ test('extractMetrics includes pace and distance for run', async () => {
 
 test('extractMetrics includes distance and pace for swim', async () => {
   const metrics = await extractMetrics(Buffer.from('fake'), 'swim', athlete);
-  expect(metrics.total_distance_m).toBeDefined();
+  expect(metrics.distance_km).toBeDefined();
   expect(metrics.avg_pace_sec).toBeDefined();
 });

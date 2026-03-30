@@ -43,11 +43,11 @@ const swimSession = {
 };
 
 test('swim: on-target pace and distance returns 100', () => {
-  expect(scoreCompliance(swimSession, { main_set_pace_sec: 180, total_distance_m: 2200 }).score).toBe(100);
+  expect(scoreCompliance(swimSession, { avg_pace_sec: 180, distance_km: 2.2 }).score).toBe(100);
 });
 
 test('swim: short distance reduces score', () => {
-  expect(scoreCompliance(swimSession, { main_set_pace_sec: 180, total_distance_m: 1800 }).score).toBeLessThan(100);
+  expect(scoreCompliance(swimSession, { avg_pace_sec: 180, distance_km: 1.8 }).score).toBeLessThan(100);
 });
 
 test('strength: returns null score (email-only)', () => {
