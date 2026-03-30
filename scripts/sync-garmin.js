@@ -158,6 +158,50 @@ async function processMultiSport(db, activityId, activityName, startTimeLocal, d
   return workoutIds;
 }
 
+async function insertDuplicate(client, db, activity) {
+  const { activityId, activityType, startTimeLocal, activityName } = activity;
+  const sport = normalizeSport(activityType?.typeKey);
+  const date = startTimeLocal?.split(' ')[0];
+
+  let fitBuffer;
+  try {
+    fitBuffer = await downloadFitFile(client, activityId);
+  } catch (err) {
+    console.warn(`[sync-garmin] No FIT file for duplicate ${activityId} (${sport} ${date}) — skipping FIT upload: ${err.message}`);
+  }
+
+  let fitPath = null;
+  if (fitBuffer) {
+    fitPath = `fit-files/${date}_${sport}_${activityId}.fit`;
+    const { error: uploadError } = await db.storage.from('fit-files').upload(fitPath, fitBuffer, { upsert: true });
+    if (uploadError) {
+      console.warn(`[sync-garmin] FIT upload failed for duplicate ${activityId}: ${uploadError.message}`);
+      fitPath = null;
+    }
+  }
+
+  const { error } = await db.from('workouts').insert({
+    garmin_activity_id: activityId,
+    activity_name: activityName || null,
+    sport,
+    date,
+    day_of_week: getDayOfWeek(startTimeLocal),
+    start_time: startTimeLocal,
+    fit_file_path: fitPath,
+    status: 'duplicate',
+  }).select('id');
+
+  if (error) {
+    if (error.code === '23505') {
+      // Already in DB (either as a real workout or a prior duplicate) — skip silently
+      return;
+    }
+    console.warn(`[sync-garmin] Failed to record duplicate ${activityId}: ${error.message}`);
+  } else {
+    console.log(`[sync-garmin] Recorded duplicate ${sport} ${activityId} (${date})`);
+  }
+}
+
 async function retryStuck(db) {
   const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
   // Retry both 'synced' (never started) and 'analyzing' (started but crashed mid-flight)
