@@ -80,7 +80,8 @@ async function processActivity(client, db, activity) {
         return newStart < exEnd && newEnd > exStart; // intervals overlap
       });
       if (isDuplicate) {
-        console.log(`[sync-garmin] Skipping duplicate bike on ${date} — time window overlaps with existing ride`);
+        console.log(`[sync-garmin] Recording duplicate bike on ${date} — time window overlaps with existing ride`);
+        await insertDuplicate(client, db, activity);
         return [];
       }
     }
