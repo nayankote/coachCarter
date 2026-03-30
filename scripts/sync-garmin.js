@@ -189,7 +189,7 @@ async function insertDuplicate(client, db, activity) {
     start_time: startTimeLocal,
     fit_file_path: fitPath,
     status: 'duplicate',
-  }).select('id');
+  });
 
   if (error) {
     if (error.code === '23505') {
