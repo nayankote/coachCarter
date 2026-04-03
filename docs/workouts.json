@@ -3288,9 +3288,9 @@
     "power_distribution": null,
     "compliance_score": null,
     "compliance_breakdown": null,
-    "coaching_report": null,
-    "feedback": null,
-    "status": "awaiting_feedback",
+    "coaching_report": "58% compliance over 4 weeks with 0% run is the number that matters most — one good run feeling doesn't fix a month of absence. Sleep is solid (74 avg, Body Battery 80), so skipped sessions are a scheduling problem, not a recovery problem. On the strength questions: wall slides and floor angels are similar but not identical — keep wall slides, drop floor angels; quadruped T-spine rotation stays, it's doing specific thoracic work your other movements don't cover; elbow CARs are controlled articular rotations for joint health, worth keeping but cue the intent better. KB armbar is optional at your current stage — swap it out if it's creating friction and killing adherence. Two actions: lock in at least two runs next week using calendar blocks, not intentions; and shift mobility work to reps-based as you prefer — that's a sensible execution adjustment, make it happen.",
+    "feedback": "I did the Thursday strength workout on Friday . Here’s feedback I recorded\nduring the workout\n\nDid Bulgarian split squats with small dumbbells, slowly progressing\n\nQuadruped t spine rotation redundant - do we need it?\nKB arm bar feels a bit extreme\nWall slides is same as floor angel?\nAre elbow cars useful? What are they?\n15-20 misn feels right for mobility\nPrefer reps over minutes for mobility",
+    "status": "complete",
     "start_time": "2026-04-03T12:42:04+00:00"
   }
 ]
