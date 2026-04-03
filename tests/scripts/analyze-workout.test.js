@@ -5,6 +5,7 @@ jest.mock('../../lib/plan');
 jest.mock('../../lib/compliance');
 jest.mock('../../lib/email');
 jest.mock('../../lib/email-templates');
+jest.mock('../../lib/athlete-context');
 
 const { getSupabase } = require('../../lib/supabase');
 const { extractMetrics } = require('../../lib/fit-parser');
@@ -12,6 +13,7 @@ const { loadPlan, calcPlanWeek, matchSession } = require('../../lib/plan');
 const { scoreCompliance } = require('../../lib/compliance');
 const { sendFeedbackEmail } = require('../../lib/email');
 const { buildEmailBody } = require('../../lib/email-templates');
+const { loadGlobalContext, buildRollingWindow, formatContextForPrompt } = require('../../lib/athlete-context');
 
 const mockWorkout = {
   id: 'uuid-123', garmin_activity_id: 999, sport: 'bike',
@@ -37,6 +39,9 @@ beforeEach(() => {
   scoreCompliance.mockReturnValue({ score: null, breakdown: {} });
   sendFeedbackEmail.mockResolvedValue({ messageId: '<msg@gmail.com>' });
   buildEmailBody.mockReturnValue('Bike email body');
+  loadGlobalContext.mockReturnValue({ season_phase: 'offseason', sleep_baseline: { typical_score: 70, typical_hours: 7 } });
+  buildRollingWindow.mockResolvedValue({ summary: { sleep: {} }, windowStart: '2026-03-01', windowEnd: '2026-03-28' });
+  formatContextForPrompt.mockReturnValue('test context');
 });
 
 test('updates status to analyzing then awaiting_feedback', async () => {

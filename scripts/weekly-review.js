@@ -4,6 +4,7 @@ const { getSupabase } = require('../lib/supabase');
 const { loadPlan, calcPlanWeek, matchSession } = require('../lib/plan');
 const { generateWeeklyReport } = require('../lib/coaching');
 const { sendFeedbackEmail } = require('../lib/email');
+const { loadGlobalContext, buildRollingWindow, formatContextForPrompt } = require('../lib/athlete-context');
 
 async function run() {
   const db = getSupabase();
@@ -54,6 +55,11 @@ async function run() {
     .order('week_end_date', { ascending: false }).limit(1);
   const priorWeekCompliance = priorWeeks?.[0]?.overall_compliance ?? null;
 
+  // Build enriched context for coaching
+  const globalCtx = loadGlobalContext();
+  const rollingWindow = await buildRollingWindow(db, weekEnd);
+  const context = formatContextForPrompt(globalCtx, rollingWindow);
+
   const summary = await generateWeeklyReport({
     planWeek,
     weekStart,
@@ -62,6 +68,7 @@ async function run() {
     avgCompliance,
     priorWeekCompliance,
     plan,
+    context,
   });
 
   await sendFeedbackEmail({
@@ -78,6 +85,7 @@ async function run() {
     sessions_completed: completed,
     sessions_missed: missed,
     summary,
+    sleep_trend: rollingWindow.summary.sleep,
   });
 
   console.log(`[weekly-review] Week ${planWeek}: ${completed} done, ${missed} missed, avg compliance ${avgCompliance}`);

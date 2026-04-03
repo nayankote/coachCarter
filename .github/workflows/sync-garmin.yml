@@ -18,11 +18,11 @@ jobs:
 
       - run: node scripts/sync-garmin.js
         env:
-          ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
-          GARMIN_EMAIL:        ${{ secrets.GARMIN_EMAIL }}
-          GARMIN_PASSWORD:     ${{ secrets.GARMIN_PASSWORD }}
-          GMAIL_APP_PASSWORD:  ${{ secrets.GMAIL_APP_PASSWORD }}
-          SUPABASE_URL:        ${{ secrets.SUPABASE_URL }}
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          GARMIN_EMAIL:         ${{ secrets.GARMIN_EMAIL }}
+          GARMIN_PASSWORD:      ${{ secrets.GARMIN_PASSWORD }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          COACHCARTER_EMAIL:   ${{ secrets.COACHCARTER_EMAIL }}
-          ATHLETE_EMAIL:       ${{ secrets.ATHLETE_EMAIL }}
+          ATHLETE_EMAIL:        ${{ secrets.ATHLETE_EMAIL }}
+          AGENTMAIL_API_KEY:    ${{ secrets.AGENTMAIL_API_KEY }}
+          AGENTMAIL_INBOX:      ${{ secrets.AGENTMAIL_INBOX }}

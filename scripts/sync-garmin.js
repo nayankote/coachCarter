@@ -1,9 +1,8 @@
 // scripts/sync-garmin.js
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
-const { createGarminClient, getNewActivities, downloadFitFile, deduplicateBikes } = require('../lib/garmin');
+const { createGarminClient, getNewActivities, downloadFitFile, deduplicateBikes, getSleepAndWellness } = require('../lib/garmin');
 const { getMultiSportSessions } = require('../lib/fit-parser');
 const { getSupabase } = require('../lib/supabase');
-const { run: analyzeWorkout } = require('./analyze-workout');
 
 async function run() {
   const db = getSupabase();
@@ -32,19 +31,65 @@ async function run() {
   let newCount = 0;
   for (const activity of keep) {
     const workoutIds = await processActivity(client, db, activity);
-    for (const workoutId of workoutIds) {
-      newCount++;
-      try {
-        await analyzeWorkout(workoutId);
-      } catch (err) {
-        console.error(`[sync-garmin] analyze-workout failed for ${workoutId}:`, err.message);
-      }
-    }
+    newCount += workoutIds.length;
   }
-  console.log(`[sync-garmin] ${newCount} new activities synced`);
+  console.log(`[sync-garmin] ${newCount} new activities synced (status: synced, awaiting analysis)`);
 
-  await retryStuck(db);
+  // --- Daily metrics sync (sleep, body battery, stress) ---
+  await syncDailyMetrics(client, db);
+
   console.log('[sync-garmin] Done');
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function syncDailyMetrics(garminClient, db) {
+  // Determine date range: if daily_metrics is empty, backfill 28 days. Otherwise from last entry to yesterday.
+  const { data: latest } = await db.from('daily_metrics')
+    .select('date').order('date', { ascending: false }).limit(1);
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  let startDate;
+  if (!latest?.length) {
+    // First run: backfill 28 days
+    startDate = new Date();
+    startDate.setDate(startDate.getDate() - 28);
+    console.log('[sync-garmin] First daily_metrics run — backfilling 28 days');
+  } else {
+    // Sync from day after last entry
+    startDate = new Date(latest[0].date);
+    startDate.setDate(startDate.getDate() + 1);
+  }
+
+  const startStr = startDate.toISOString().split('T')[0];
+  if (startStr > yesterdayStr) {
+    console.log('[sync-garmin] Daily metrics already up to date');
+    return;
+  }
+
+  let syncCount = 0;
+  const current = new Date(startDate);
+  while (current.toISOString().split('T')[0] <= yesterdayStr) {
+    const dateStr = current.toISOString().split('T')[0];
+    try {
+      const metrics = await getSleepAndWellness(garminClient, dateStr);
+      const { error } = await db.from('daily_metrics').upsert(metrics, { onConflict: 'date' });
+      if (error) {
+        console.warn(`[sync-garmin] daily_metrics upsert failed for ${dateStr}: ${error.message}`);
+      } else {
+        syncCount++;
+      }
+    } catch (err) {
+      console.warn(`[sync-garmin] daily_metrics failed for ${dateStr}: ${err.message}`);
+    }
+    await sleep(2000); // rate limit
+    current.setDate(current.getDate() + 1);
+  }
+
+  console.log(`[sync-garmin] ${syncCount} daily_metrics days synced`);
 }
 
 // Returns array of new workout UUIDs (empty on failure, multiple for multi_sport)
@@ -205,19 +250,6 @@ async function insertDuplicate(client, db, activity) {
     console.warn(`[sync-garmin] Failed to record duplicate ${activityId}: ${error.message}`);
   } else {
     console.log(`[sync-garmin] Recorded duplicate ${sport} ${activityId} (${date})`);
-  }
-}
-
-async function retryStuck(db) {
-  const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-  // Retry both 'synced' (never started) and 'analyzing' (started but crashed mid-flight)
-  const { data: stuck } = await db.from('workouts').select('id')
-    .in('status', ['synced', 'analyzing']).lt('created_at', cutoff);
-  if (!stuck?.length) return;
-  console.log(`[sync-garmin] Retrying ${stuck.length} stuck rows`);
-  for (const { id } of stuck) {
-    try { await analyzeWorkout(id); }
-    catch (err) { console.error(`[sync-garmin] Retry failed for ${id}:`, err.message); }
   }
 }
 

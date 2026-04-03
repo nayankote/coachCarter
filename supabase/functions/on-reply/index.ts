@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
   // AgentMail wraps the email under payload.message; in_reply_to may be a Gmail-assigned ID
   // so we also check the references array which contains our original SES message ID
   const message            = payload.message ?? payload;
-  const incomingMessageId  = message.id;  // AgentMail internal UUID of the athlete's reply — use for reply_to_message_id
+  const incomingMessageId  = message.id;  // AgentMail internal UUID of the athlete's reply
   const inReplyTo          = message.in_reply_to ?? message.headers?.['In-Reply-To'];
   const references: string[] = message.references ?? [];
   const replyBody = cleanReplyText(message.extracted_text ?? stripHtml(message.html ?? ''));
@@ -63,17 +63,31 @@ Deno.serve(async (req: Request) => {
     return new Response('OK', { status: 200 });
   }
 
-  // Match workout by in_reply_to first, then fall back to references array.
-  // in_reply_to may be a Gmail-assigned ID; our SES message ID appears in references.
-  let workout: any = null;
   const candidates = [inReplyTo, ...references].filter(Boolean);
+
+  // --- Route 1: Check if this is a reply to a daily nudge ---
+  const nudgeResult = await matchNudge(candidates);
+  if (nudgeResult) {
+    await handleNudgeReply(nudgeResult, replyBody, incomingMessageId);
+    return new Response('OK', { status: 200 });
+  }
+
+  // --- Route 2: Check if this is a reply to a plan proposal ---
+  const proposalResult = await matchProposal(candidates);
+  if (proposalResult) {
+    await handleProposalReply(proposalResult, replyBody, incomingMessageId);
+    return new Response('OK', { status: 200 });
+  }
+
+  // --- Route 3: Workout feedback reply (existing flow) ---
+  let workout: any = null;
   for (const msgId of candidates) {
     const { data } = await supabase.from('workouts').select('*').eq('email_message_id', msgId).single();
     if (data) { workout = data; break; }
   }
 
   if (!workout) {
-    console.log(`[on-reply] No workout found for any of: ${candidates.join(', ')}`);
+    console.log(`[on-reply] No match for any of: ${candidates.join(', ')}`);
     return new Response('OK', { status: 200 });
   }
 
@@ -100,6 +114,7 @@ Deno.serve(async (req: Request) => {
     const sessionData = workout.session_data ?? {};
     const session     = sessionData.session ?? null;
     const athlete     = sessionData.athlete ?? {};
+    const context     = sessionData.context ?? '';
 
     let complianceScore     = workout.compliance_score;
     let complianceBreakdown = workout.compliance_breakdown;
@@ -113,16 +128,15 @@ Deno.serve(async (req: Request) => {
       complianceBreakdown = parsed;
     }
 
-    // Generate coaching report
+    // Generate coaching report with enriched context
     const coachingReport = await callAnthropic(
       anthropicKey,
-      buildCoachingPrompt(workout, athlete, session, replyBody, complianceScore),
+      buildCoachingPrompt(workout, athlete, session, replyBody, complianceScore, context),
       600
     );
 
-    // Send coaching report as threaded reply — use the incoming AgentMail message ID
-    // (the athlete's feedback email) so the reply lands in the same thread
-    await sendViaAgentMail(agentmailKey, agentmailInbox, {
+    // Send coaching report as threaded reply
+    const reportResult = await sendViaAgentMail(agentmailKey, agentmailInbox, {
       to: athleteEmail,
       subject: `[CoachCarter] ${workout.day_of_week} ${workout.sport} — coaching report`,
       text: coachingReport,
@@ -139,6 +153,47 @@ Deno.serve(async (req: Request) => {
     }).eq('id', workout.id);
 
     console.log(`[on-reply] ${workout.id} complete, score=${complianceScore}`);
+
+    // --- Evaluate feedback against Plan Stability Doctrine ---
+    if (context) {
+      try {
+        const triggerResult = await callAnthropic(anthropicKey, buildTriggerEvalPrompt(replyBody, context), 200);
+        const triggerParsed = JSON.parse(triggerResult.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim());
+
+        if (triggerParsed.triggered) {
+          console.log(`[on-reply] Plan Stability trigger fired: ${triggerParsed.trigger} — ${triggerParsed.reasoning}`);
+
+          // Generate proposal
+          const proposalText = await callAnthropic(
+            anthropicKey,
+            buildProposalPrompt(triggerParsed.trigger, replyBody, context),
+            1000
+          );
+
+          // Send proposal email in same thread
+          const proposalEmail = await sendViaAgentMail(agentmailKey, agentmailInbox, {
+            to: athleteEmail,
+            subject: `[CoachCarter] Plan adjustment proposal`,
+            text: proposalText,
+            replyToMessageId: incomingMessageId,
+          });
+
+          // Store proposal
+          await supabase.from('plan_proposals').insert({
+            source: 'feedback',
+            source_workout_id: workout.id,
+            plan_week: workout.plan_week,
+            status: 'proposed',
+            proposal_text: proposalText,
+            email_message_id: proposalEmail?.message_id ?? null,
+          });
+        }
+      } catch (err) {
+        // Non-fatal — coaching report already sent
+        console.error('[on-reply] Trigger evaluation failed (non-fatal):', err);
+      }
+    }
+
     return new Response('OK', { status: 200 });
 
   } catch (err) {
@@ -148,6 +203,142 @@ Deno.serve(async (req: Request) => {
     return new Response('Internal error', { status: 500 });
   }
 });
+
+// --- Nudge reply handling ---
+
+async function matchNudge(candidates: string[]): Promise<any | null> {
+  for (const msgId of candidates) {
+    const { data } = await supabase.from('daily_nudges')
+      .select('*').eq('email_message_id', msgId).is('response', null).limit(1).single();
+    if (data) return data;
+  }
+  return null;
+}
+
+async function handleNudgeReply(nudge: any, replyBody: string, incomingMessageId: string) {
+  // Update all nudge rows sharing the same email_message_id (one email may cover multiple sessions)
+  await supabase.from('daily_nudges')
+    .update({ response: replyBody, response_at: new Date().toISOString() })
+    .eq('email_message_id', nudge.email_message_id);
+
+  console.log(`[on-reply] Nudge reply recorded for ${nudge.date} — "${replyBody.slice(0, 80)}"`);
+
+  // Send brief acknowledgment
+  const anthropicKey   = Deno.env.get('ANTHROPIC_API_KEY')!;
+  const agentmailKey   = Deno.env.get('AGENTMAIL_API_KEY')!;
+  const agentmailInbox = Deno.env.get('AGENTMAIL_INBOX')!;
+  const athleteEmail   = Deno.env.get('ATHLETE_EMAIL')!;
+
+  const ack = await callAnthropic(
+    anthropicKey,
+    `You are a triathlon coach. The athlete replied to a missed-workout check-in with: "${replyBody}". Write a brief 1-2 sentence acknowledgment. Be warm but direct. If they gave a reason, acknowledge it. If they plan to make it up, encourage that. No headers, no fluff.`,
+    150
+  );
+
+  await sendViaAgentMail(agentmailKey, agentmailInbox, {
+    to: athleteEmail,
+    subject: `[CoachCarter] Got it`,
+    text: ack,
+    replyToMessageId: incomingMessageId,
+  });
+}
+
+// --- Proposal reply handling ---
+
+async function matchProposal(candidates: string[]): Promise<any | null> {
+  for (const msgId of candidates) {
+    const { data } = await supabase.from('plan_proposals')
+      .select('*').eq('email_message_id', msgId).eq('status', 'proposed').limit(1).single();
+    if (data) return data;
+  }
+  return null;
+}
+
+async function handleProposalReply(proposal: any, replyBody: string, incomingMessageId: string) {
+  const anthropicKey   = Deno.env.get('ANTHROPIC_API_KEY')!;
+  const agentmailKey   = Deno.env.get('AGENTMAIL_API_KEY')!;
+  const agentmailInbox = Deno.env.get('AGENTMAIL_INBOX')!;
+  const athleteEmail   = Deno.env.get('ATHLETE_EMAIL')!;
+
+  // Classify the response
+  const classResult = await callAnthropic(
+    anthropicKey,
+    `Classify this athlete's reply to a plan change proposal. Reply: "${replyBody}"\n\nReturn JSON only: {"decision": "accept|reject|modify", "summary": "brief description"}`,
+    100
+  );
+  const parsed = JSON.parse(classResult.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim());
+
+  if (parsed.decision === 'accept') {
+    await supabase.from('plan_proposals').update({
+      status: 'approved',
+      athlete_response: replyBody,
+      resolved_at: new Date().toISOString(),
+    }).eq('id', proposal.id);
+
+    await sendViaAgentMail(agentmailKey, agentmailInbox, {
+      to: athleteEmail,
+      subject: `[CoachCarter] Plan update confirmed`,
+      text: `Got it — plan changes approved. I'll update plan.json accordingly. You'll see the updated plan reflected in your next coaching email.`,
+      replyToMessageId: incomingMessageId,
+    });
+
+    console.log(`[on-reply] Proposal ${proposal.id} accepted`);
+
+  } else if (parsed.decision === 'reject') {
+    await supabase.from('plan_proposals').update({
+      status: 'rejected',
+      athlete_response: replyBody,
+      resolved_at: new Date().toISOString(),
+    }).eq('id', proposal.id);
+
+    await sendViaAgentMail(agentmailKey, agentmailInbox, {
+      to: athleteEmail,
+      subject: `[CoachCarter] Plan stays as-is`,
+      text: `Understood — keeping the plan unchanged. Let me know if anything changes.`,
+      replyToMessageId: incomingMessageId,
+    });
+
+    console.log(`[on-reply] Proposal ${proposal.id} rejected`);
+
+  } else {
+    // Athlete wants modifications — generate revised proposal
+    const revisedText = await callAnthropic(
+      anthropicKey,
+      `You are a triathlon coach. The athlete received this plan proposal:\n\n${proposal.proposal_text}\n\nThey replied: "${replyBody}"\n\nGenerate a revised proposal incorporating their feedback. Follow the same format:\n1. What's changing and why\n2. Full week view (before and after)\n3. Constraint check\n4. Reversibility\n\nEnd with: "Reply YES to approve, NO to decline, or suggest an alternative."`,
+      1000
+    );
+
+    // Mark original as revised
+    await supabase.from('plan_proposals').update({
+      status: 'revised',
+      athlete_response: replyBody,
+      resolved_at: new Date().toISOString(),
+    }).eq('id', proposal.id);
+
+    // Send revised proposal
+    const revisedEmail = await sendViaAgentMail(agentmailKey, agentmailInbox, {
+      to: athleteEmail,
+      subject: `[CoachCarter] Revised plan proposal`,
+      text: revisedText,
+      replyToMessageId: incomingMessageId,
+    });
+
+    // Insert new proposal row
+    await supabase.from('plan_proposals').insert({
+      source: proposal.source,
+      source_workout_id: proposal.source_workout_id,
+      plan_week: proposal.plan_week,
+      status: 'proposed',
+      proposal_text: revisedText,
+      revision_of: proposal.id,
+      email_message_id: revisedEmail?.message_id ?? null,
+    });
+
+    console.log(`[on-reply] Proposal ${proposal.id} revised, new proposal created`);
+  }
+}
+
+// --- Shared helpers ---
 
 async function callAnthropic(apiKey: string, prompt: string, maxTokens: number): Promise<string> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -182,6 +373,52 @@ async function sendViaAgentMail(
     }),
   });
   if (!res.ok) throw new Error(`AgentMail error ${res.status}: ${await res.text()}`);
+  return await res.json();
+}
+
+const PLAN_STABILITY_DOCTRINE = `
+PLAN STABILITY DOCTRINE:
+Only THREE triggers justify a plan change:
+1. EXPLICIT ATHLETE REQUEST
+2. STRUCTURAL IMPOSSIBILITY (permanent, not one-off)
+3. SUSTAINED PATTERN OVER 3+ WEEKS
+Everything else gets a coaching note only.
+If compliance > 70%, do NOT propose structural changes.
+Every proposal must answer: "Why is this a plan problem and not an execution problem?"
+`.trim();
+
+function buildTriggerEvalPrompt(feedback: string, context: string): string {
+  return `${PLAN_STABILITY_DOCTRINE}
+
+${context}
+
+Athlete feedback:
+"${feedback}"
+
+Evaluate this feedback against the Plan Stability Doctrine. Does it meet ANY of the three triggers?
+Return JSON only:
+{"triggered": true/false, "trigger": "trigger_1|trigger_2|trigger_3|none", "reasoning": "brief explanation"}`;
+}
+
+function buildProposalPrompt(trigger: string, feedback: string, context: string): string {
+  return `You are a triathlon coach. Be direct and data-led.
+
+${PLAN_STABILITY_DOCTRINE}
+
+${context}
+
+A Plan Stability Doctrine trigger has fired: ${trigger}
+Athlete feedback: "${feedback}"
+
+Generate a plan change proposal including:
+1. WHAT'S CHANGING — specific sessions/exercises affected
+2. WHY — why this is a plan problem not an execution problem
+3. FULL WEEK VIEW (BEFORE) — text table of current week
+4. FULL WEEK VIEW (AFTER) — with changes highlighted
+5. CONSTRAINT CHECK — recovery gaps, intensity sequencing, sport balance
+6. REVERSIBILITY — when to re-evaluate
+
+End with: "Reply YES to approve, NO to decline, or suggest an alternative."`;
 }
 
 function buildStrengthPrompt(session: any, feedback: string): string {
@@ -212,7 +449,8 @@ function buildCoachingPrompt(
   athlete: any,
   session: any,
   feedback: string,
-  complianceScore: number | null
+  complianceScore: number | null,
+  context: string
 ): string {
   const athleteCtx = `Athlete: FTP ${athlete.ftp ?? '?'}W, LTHR ${athlete.lthr ?? '?'}bpm, run threshold ${athlete.run_threshold_sec_per_km ?? '?'}s/km, swim CSS ${athlete.swim_css_sec_per_100m ?? '?'}s/100m.`;
   const workoutCtx = [
@@ -228,12 +466,17 @@ function buildCoachingPrompt(
     `Athlete feedback: ${feedback}`,
   ].filter(Boolean).join('\n');
 
-  return `You are a triathlon coach. Write a short, direct coaching note — 4–6 sentences max, no headers, no fluff.
+  const contextBlock = context ? `\n\n${context}\n` : '';
+
+  return `You are a triathlon coach. Be direct and data-led. Lead with numbers. Coach, not cheerleader.
+
+${PLAN_STABILITY_DOCTRINE}
 
 ${athleteCtx}
-
+${contextBlock}
 ${workoutCtx}
 
+Write a short, direct coaching note — 4–6 sentences max, no headers, no fluff.
 Lead with the key numbers and what they mean. Call out 1–2 high-impact actionables for next time. Be blunt.${complianceScore != null && complianceScore < 70 ? ' Include one concrete plan adjustment.' : ''}`;
 }
 

@@ -27,6 +27,16 @@ Use when: coaching report suggests an adjustment, starting a new training block,
 
 6. Report what changed and which sessions or targets were affected.
 
+## Proposal-based Updates
+When updating based on an accepted plan proposal:
+1. Check Supabase for accepted proposals:
+   ```bash
+   node -e "require('dotenv').config(); const {getSupabase}=require('./lib/supabase'); (async()=>{const db=getSupabase(); const {data}=await db.from('plan_proposals').select('*').eq('status','approved').order('resolved_at',{ascending:false}).limit(1); console.log(JSON.stringify(data,null,2));})()"
+   ```
+2. Review the `proposal_text` and `athlete_response` to understand what was agreed
+3. Make the targeted changes to plan.json matching the accepted proposal
+4. Follow the normal validation and commit steps below
+
 ## Rules
 - Session `id` values must stay stable — stored in the workouts table as `plan_session_id`
 - Never remove a week that has already started; only add or modify future sessions

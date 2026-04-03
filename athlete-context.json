@@ -1,0 +1,24 @@
+{
+  "season_phase": "offseason",
+  "race_targets": [],
+  "upcoming_life_events": [
+    { "event": "US trip — SF meetings (Anthropic, Meta)", "dates": "May 2026", "impact": "reduced training volume, no bike access" }
+  ],
+  "training_philosophy": "Maintain aerobic base, sustainable volume, don't dig recovery holes. Prioritise consistency over intensity.",
+  "active_injuries": [],
+  "known_patterns": [
+    "Tends to miss Monday sessions — scheduling, not fatigue",
+    "Responds well to Saturday brick sessions",
+    "Swim plateau at 3:00/100m CSS — likely technical, not aerobic"
+  ],
+  "nutrition_context": "No specific diet. Occasional social drinking. Vegetarian.",
+  "sleep_baseline": {
+    "typical_score": 70,
+    "typical_hours": 7.0,
+    "note": "Scores below 55 correlate with poor next-day training"
+  },
+  "last_updated": "2026-04-03",
+  "update_log": [
+    { "date": "2026-04-03", "change": "Initial creation from offseason context" }
+  ]
+}

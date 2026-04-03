@@ -3,11 +3,13 @@ jest.mock('../../lib/supabase');
 jest.mock('../../lib/plan');
 jest.mock('../../lib/coaching');
 jest.mock('../../lib/email');
+jest.mock('../../lib/athlete-context');
 
 const { getSupabase } = require('../../lib/supabase');
 const { loadPlan, calcPlanWeek } = require('../../lib/plan');
 const { generateWeeklyReport } = require('../../lib/coaching');
 const { sendFeedbackEmail } = require('../../lib/email');
+const { loadGlobalContext, buildRollingWindow, formatContextForPrompt } = require('../../lib/athlete-context');
 
 const mockInsert = jest.fn().mockResolvedValue({ error: null });
 const mockDb = {
@@ -38,6 +40,9 @@ beforeEach(() => {
   calcPlanWeek.mockReturnValue(1);
   generateWeeklyReport.mockResolvedValue('Good week overall.');
   sendFeedbackEmail.mockResolvedValue({ messageId: '<weekly@gmail.com>' });
+  loadGlobalContext.mockReturnValue({ season_phase: 'offseason', sleep_baseline: { typical_score: 70, typical_hours: 7 } });
+  buildRollingWindow.mockResolvedValue({ summary: { sleep: {} }, windowStart: '2026-03-01', windowEnd: '2026-03-28' });
+  formatContextForPrompt.mockReturnValue('test context');
 });
 
 test('queries workouts table for the current week', async () => {

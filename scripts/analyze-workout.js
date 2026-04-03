@@ -6,6 +6,7 @@ const { loadPlan, calcPlanWeek, matchSession } = require('../lib/plan');
 const { scoreCompliance } = require('../lib/compliance');
 const { sendFeedbackEmail } = require('../lib/email');
 const { buildEmailBody } = require('../lib/email-templates');
+const { loadGlobalContext, buildRollingWindow, formatContextForPrompt } = require('../lib/athlete-context');
 
 async function run(workoutId) {
   const db = getSupabase();
@@ -33,13 +34,18 @@ async function run(workoutId) {
     ? (() => { const r = scoreCompliance(session, metrics); return { score: r.score, compliance_breakdown: r.breakdown }; })()
     : { score: null, compliance_breakdown: null };
 
+  // 3b. Build enriched context for coaching
+  const globalCtx = loadGlobalContext();
+  const rollingWindow = await buildRollingWindow(db, workout.date);
+  const context = formatContextForPrompt(globalCtx, rollingWindow);
+
   // 4. Persist metrics + plan match
   await db.from('workouts').update({
     plan_week: planWeek,
     plan_session_id: planSessionId,
     compliance_score: score,
     compliance_breakdown,
-    session_data: { session: session || null, athlete: plan.athlete },
+    session_data: { session: session || null, athlete: plan.athlete, context },
     ...flattenMetrics(metrics),
   }).eq('id', workoutId);
 
