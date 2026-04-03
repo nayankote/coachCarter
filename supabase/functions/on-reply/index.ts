@@ -135,10 +135,10 @@ Deno.serve(async (req: Request) => {
       600
     );
 
-    // Send coaching report as threaded reply
+    // Send coaching report as threaded reply — keep same subject for threading
     const reportResult = await sendViaAgentMail(agentmailKey, agentmailInbox, {
       to: athleteEmail,
-      subject: `[CoachCarter] ${workout.day_of_week} ${workout.sport} — coaching report`,
+      subject: `Re: [CoachCarter] ${workout.day_of_week} ${workout.sport} — feedback needed`,
       text: coachingReport,
       replyToMessageId: incomingMessageId ?? locked.email_message_id ?? inReplyTo,
     });
@@ -173,7 +173,7 @@ Deno.serve(async (req: Request) => {
           // Send proposal email in same thread
           const proposalEmail = await sendViaAgentMail(agentmailKey, agentmailInbox, {
             to: athleteEmail,
-            subject: `[CoachCarter] Plan adjustment proposal`,
+            subject: `Re: [CoachCarter] ${workout.day_of_week} ${workout.sport} — feedback needed`,
             text: proposalText,
             replyToMessageId: incomingMessageId,
           });
@@ -237,7 +237,7 @@ async function handleNudgeReply(nudge: any, replyBody: string, incomingMessageId
 
   await sendViaAgentMail(agentmailKey, agentmailInbox, {
     to: athleteEmail,
-    subject: `[CoachCarter] Got it`,
+    subject: `Re: [CoachCarter] Missed ${nudge.date} — checking in`,
     text: ack,
     replyToMessageId: incomingMessageId,
   });
@@ -277,7 +277,7 @@ async function handleProposalReply(proposal: any, replyBody: string, incomingMes
 
     await sendViaAgentMail(agentmailKey, agentmailInbox, {
       to: athleteEmail,
-      subject: `[CoachCarter] Plan update confirmed`,
+      subject: `Re: [CoachCarter] Week ${proposal.plan_week} plan review — proposed adjustment`,
       text: `Got it — plan changes approved. I'll update plan.json accordingly. You'll see the updated plan reflected in your next coaching email.`,
       replyToMessageId: incomingMessageId,
     });
@@ -293,7 +293,7 @@ async function handleProposalReply(proposal: any, replyBody: string, incomingMes
 
     await sendViaAgentMail(agentmailKey, agentmailInbox, {
       to: athleteEmail,
-      subject: `[CoachCarter] Plan stays as-is`,
+      subject: `Re: [CoachCarter] Week ${proposal.plan_week} plan review — proposed adjustment`,
       text: `Understood — keeping the plan unchanged. Let me know if anything changes.`,
       replyToMessageId: incomingMessageId,
     });
@@ -318,7 +318,7 @@ async function handleProposalReply(proposal: any, replyBody: string, incomingMes
     // Send revised proposal
     const revisedEmail = await sendViaAgentMail(agentmailKey, agentmailInbox, {
       to: athleteEmail,
-      subject: `[CoachCarter] Revised plan proposal`,
+      subject: `Re: [CoachCarter] Week ${proposal.plan_week} plan review — proposed adjustment`,
       text: revisedText,
       replyToMessageId: incomingMessageId,
     });
