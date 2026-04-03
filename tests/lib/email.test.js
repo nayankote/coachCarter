@@ -33,7 +33,7 @@ test('sends email via AgentMail API', async () => {
   expect(result.messageId).toBe('<abc123@mail.agentmail.to>');
 });
 
-test('includes reply_to_message_id when threading', async () => {
+test('uses Reply endpoint when threading', async () => {
   mockFetch.mockResolvedValueOnce({
     ok: true,
     json: async () => ({ message_id: '<reply@mail.agentmail.to>' }),
@@ -44,11 +44,16 @@ test('includes reply_to_message_id when threading', async () => {
     to: 'athlete@example.com',
     subject: 'Re: test',
     body: 'Report body',
-    replyToMessageId: '<original@mail.agentmail.to>',
+    replyToMessageId: 'msg-uuid-123',
   });
 
+  expect(mockFetch).toHaveBeenCalledWith(
+    'https://api.agentmail.to/v0/inboxes/coachcarter/messages/msg-uuid-123/reply',
+    expect.objectContaining({ method: 'POST' })
+  );
   const sentBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-  expect(sentBody.reply_to_message_id).toBe('<original@mail.agentmail.to>');
+  expect(sentBody.text).toBe('Report body');
+  expect(sentBody.subject).toBeUndefined();
 });
 
 test('throws on AgentMail API error', async () => {

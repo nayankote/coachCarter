@@ -364,13 +364,21 @@ async function sendViaAgentMail(
   inbox: string,
   { to, subject, text, replyToMessageId }: { to: string; subject: string; text: string; replyToMessageId?: string }
 ) {
+  // Use Reply endpoint when threading, Send endpoint for new conversations
+  if (replyToMessageId) {
+    const res = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inbox)}/messages/${encodeURIComponent(replyToMessageId)}/reply`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, text }),
+    });
+    if (!res.ok) throw new Error(`AgentMail reply error ${res.status}: ${await res.text()}`);
+    return await res.json();
+  }
+
   const res = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inbox)}/messages/send`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to, subject, text,
-      ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {}),
-    }),
+    body: JSON.stringify({ to, subject, text }),
   });
   if (!res.ok) throw new Error(`AgentMail error ${res.status}: ${await res.text()}`);
   return await res.json();
