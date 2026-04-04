@@ -170,10 +170,10 @@ Deno.serve(async (req: Request) => {
             1000
           );
 
-          // Consistency gate: check proposal doesn't contradict coaching report
+          // Consistency gate: check for factual contradictions only (not plan opinions)
           const consistencyCheck = await callAnthropic(
             anthropicKey,
-            `A coaching report and a plan proposal were generated from the same athlete feedback. Check if they contradict each other.\n\nCOACHING REPORT:\n"${coachingReport}"\n\nPLAN PROPOSAL:\n"${proposalText}"\n\nDoes the proposal contradict the coaching report? Contradictions include: recommending removing something the report said to keep, or vice versa; giving opposite advice on the same exercise/session; conflicting guidance on volume/intensity.\n\nReturn JSON only:\n{"consistent": true/false, "contradiction": "brief description or null"}`,
+            `A coaching report and a plan proposal were generated from the same athlete feedback. Check for FACTUAL contradictions only.\n\nCOACHING REPORT:\n"${coachingReport}"\n\nPLAN PROPOSAL:\n"${proposalText}"\n\nOnly flag as inconsistent if they state opposite FACTS — e.g., "power was on target" vs "power was below target", or "sleep was fine" vs "sleep was poor". Differences in plan-level recommendations (keep vs remove an exercise) are NOT contradictions — the coaching report covers session feedback while the proposal covers plan changes. These are separate concerns.\n\nReturn JSON only:\n{"consistent": true/false, "contradiction": "brief description or null"}`,
             150
           );
           const consistency = JSON.parse(consistencyCheck.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim());
@@ -512,7 +512,9 @@ ${contextBlock}
 ${workoutCtx}
 
 Write a short, direct coaching note — 4–6 sentences max, no headers, no fluff.
-Lead with the key numbers and what they mean. Call out 1–2 high-impact actionables for next time. Be blunt.${complianceScore != null && complianceScore < 70 ? ' Include one concrete plan adjustment.' : ''}`;
+Lead with the key numbers and what they mean. Call out 1–2 high-impact actionables for next time. Be blunt.
+Do NOT comment on whether exercises should be kept or removed from the plan. Stick to session feedback only — what happened, how it went, what to focus on next time.
+If the athlete requests a plan change or raises a concern, acknowledge it and say it will be addressed separately.${complianceScore != null && complianceScore < 70 ? ' Include one concrete plan adjustment.' : ''}`;
 }
 
 function stripHtml(html: string): string {
