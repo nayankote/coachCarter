@@ -163,10 +163,10 @@ Deno.serve(async (req: Request) => {
         if (triggerParsed.triggered) {
           console.log(`[on-reply] Plan Stability trigger fired: ${triggerParsed.trigger} — ${triggerParsed.reasoning}`);
 
-          // Generate proposal
+          // Generate proposal — pass coaching report for consistency
           const proposalText = await callAnthropic(
             anthropicKey,
-            buildProposalPrompt(triggerParsed.trigger, replyBody, context),
+            buildProposalPrompt(triggerParsed.trigger, replyBody, context, coachingReport),
             1000
           );
 
@@ -404,11 +404,23 @@ Athlete feedback:
 "${feedback}"
 
 Evaluate this feedback against the Plan Stability Doctrine. Does it meet ANY of the three triggers?
+
+IMPORTANT — these are NOT triggers:
+- Questions about exercises ("what is X?", "is X useful?") → coaching note, not a trigger
+- Expressing preferences ("I prefer reps over minutes") → coaching note unless it makes the current plan impossible
+- Reporting difficulty ("X feels extreme", "Y is hard") → coaching note, difficulty is expected
+- Feedback about a single session → coaching note, one session is never a pattern
+- Describing what they did differently ("did X with dumbbells") → coaching note, this is execution info
+
+Only return triggered:true if the feedback contains an UNAMBIGUOUS, DIRECT request to change the plan, describes a PERMANENT structural barrier, or the rolling window shows 3+ weeks of the SAME problem.
+
+Default to triggered:false. When in doubt, it's not a trigger.
+
 Return JSON only:
 {"triggered": true/false, "trigger": "trigger_1|trigger_2|trigger_3|none", "reasoning": "brief explanation"}`;
 }
 
-function buildProposalPrompt(trigger: string, feedback: string, context: string): string {
+function buildProposalPrompt(trigger: string, feedback: string, context: string, coachingReport: string): string {
   return `You are a triathlon coach. Be direct and data-led.
 
 ${PLAN_STABILITY_DOCTRINE}
@@ -418,13 +430,16 @@ ${context}
 A Plan Stability Doctrine trigger has fired: ${trigger}
 Athlete feedback: "${feedback}"
 
+IMPORTANT — You already sent this coaching report to the athlete moments ago:
+"${coachingReport}"
+
+Your proposal MUST be consistent with the coaching report above. Do not contradict advice you just gave. If the coaching report recommended keeping an exercise, do not propose removing it.
+
 Generate a plan change proposal including:
 1. WHAT'S CHANGING — specific sessions/exercises affected
 2. WHY — why this is a plan problem not an execution problem
-3. FULL WEEK VIEW (BEFORE) — text table of current week
-4. FULL WEEK VIEW (AFTER) — with changes highlighted
-5. CONSTRAINT CHECK — recovery gaps, intensity sequencing, sport balance
-6. REVERSIBILITY — when to re-evaluate
+3. CONSTRAINT CHECK — recovery gaps, intensity sequencing, sport balance
+4. REVERSIBILITY — when to re-evaluate
 
 End with: "Reply YES to approve, NO to decline, or suggest an alternative."`;
 }
