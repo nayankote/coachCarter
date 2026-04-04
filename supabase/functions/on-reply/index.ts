@@ -170,23 +170,35 @@ Deno.serve(async (req: Request) => {
             1000
           );
 
-          // Send proposal email in same thread
-          const proposalEmail = await sendViaAgentMail(agentmailKey, agentmailInbox, {
-            to: athleteEmail,
-            subject: `Re: [CoachCarter] ${workout.day_of_week} ${workout.sport} — feedback needed`,
-            text: proposalText,
-            replyToMessageId: incomingMessageId,
-          });
+          // Consistency gate: check proposal doesn't contradict coaching report
+          const consistencyCheck = await callAnthropic(
+            anthropicKey,
+            `A coaching report and a plan proposal were generated from the same athlete feedback. Check if they contradict each other.\n\nCOACHING REPORT:\n"${coachingReport}"\n\nPLAN PROPOSAL:\n"${proposalText}"\n\nDoes the proposal contradict the coaching report? Contradictions include: recommending removing something the report said to keep, or vice versa; giving opposite advice on the same exercise/session; conflicting guidance on volume/intensity.\n\nReturn JSON only:\n{"consistent": true/false, "contradiction": "brief description or null"}`,
+            150
+          );
+          const consistency = JSON.parse(consistencyCheck.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim());
 
-          // Store proposal
-          await supabase.from('plan_proposals').insert({
-            source: 'feedback',
-            source_workout_id: workout.id,
-            plan_week: workout.plan_week,
-            status: 'proposed',
-            proposal_text: proposalText,
-            email_message_id: proposalEmail?.message_id ?? null,
-          });
+          if (!consistency.consistent) {
+            console.log(`[on-reply] Proposal suppressed — contradicts coaching report: ${consistency.contradiction}`);
+          } else {
+            // Send proposal email in same thread
+            const proposalEmail = await sendViaAgentMail(agentmailKey, agentmailInbox, {
+              to: athleteEmail,
+              subject: `Re: [CoachCarter] ${workout.day_of_week} ${workout.sport} — feedback needed`,
+              text: proposalText,
+              replyToMessageId: incomingMessageId,
+            });
+
+            // Store proposal
+            await supabase.from('plan_proposals').insert({
+              source: 'feedback',
+              source_workout_id: workout.id,
+              plan_week: workout.plan_week,
+              status: 'proposed',
+              proposal_text: proposalText,
+              email_message_id: proposalEmail?.message_id ?? null,
+            });
+          }
         }
       } catch (err) {
         // Non-fatal — coaching report already sent
@@ -435,11 +447,12 @@ IMPORTANT — You already sent this coaching report to the athlete moments ago:
 
 Your proposal MUST be consistent with the coaching report above. Do not contradict advice you just gave. If the coaching report recommended keeping an exercise, do not propose removing it.
 
-Generate a plan change proposal including:
-1. WHAT'S CHANGING — specific sessions/exercises affected
-2. WHY — why this is a plan problem not an execution problem
-3. CONSTRAINT CHECK — recovery gaps, intensity sequencing, sport balance
-4. REVERSIBILITY — when to re-evaluate
+Generate a SHORT plan change proposal (10 lines max). Use bullet points, not tables. No pipe characters. Format for plain-text email.
+
+- What's changing (1-2 bullet points)
+- Why it's a plan problem, not execution (1 sentence)
+- Any tradeoffs (1 sentence)
+- When to re-evaluate (1 sentence)
 
 End with: "Reply YES to approve, NO to decline, or suggest an alternative."`;
 }
