@@ -507,8 +507,6 @@ function buildCoachingPrompt(
 
   return `You are a triathlon coach. Be direct and data-led. Lead with numbers. Coach, not cheerleader.
 
-${PLAN_STABILITY_DOCTRINE}
-
 ${athleteCtx}
 ${contextBlock}
 ${workoutCtx}
