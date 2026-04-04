@@ -447,12 +447,13 @@ IMPORTANT — You already sent this coaching report to the athlete moments ago:
 
 Your proposal MUST be consistent with the coaching report above. Do not contradict advice you just gave. If the coaching report recommended keeping an exercise, do not propose removing it.
 
-Generate a SHORT plan change proposal (10 lines max). Use bullet points, not tables. No pipe characters. Format for plain-text email.
+Generate a plan change proposal. Be concise — say what needs to be said, nothing more. Use bullet points, not tables. No pipe characters or ASCII tables — this is a plain-text email.
 
-- What's changing (1-2 bullet points)
-- Why it's a plan problem, not execution (1 sentence)
-- Any tradeoffs (1 sentence)
-- When to re-evaluate (1 sentence)
+Cover:
+- What's changing and why
+- Why this is a plan problem, not an execution problem
+- Any tradeoffs
+- When to re-evaluate
 
 End with: "Reply YES to approve, NO to decline, or suggest an alternative."`;
 }
